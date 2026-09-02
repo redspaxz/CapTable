@@ -1,3 +1,3 @@
-# new-project
+# CapTable
 
-A new coding project.
+A cap table (capitalization table) application.
