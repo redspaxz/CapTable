@@ -1,0 +1,60 @@
+<?php
+
+/** @var App\Core\Router $router */
+
+use App\Core\Auth;
+use App\Modules\CapTable\CapTableController;
+use App\Modules\Dashboard\DashboardController;
+use App\Modules\Documents\DocumentController;
+use App\Modules\Security\AuthController;
+use App\Modules\Shares\IssuanceController;
+use App\Modules\Shares\ShareClassController;
+use App\Modules\Shares\TransferController;
+use App\Modules\Shareholders\ShareholderController;
+
+$auth = [Auth::class, 'requireLogin'];
+$admin = fn() => Auth::requireRole('admin', 'finance');
+$view = fn() => Auth::requireRole('admin', 'finance', 'viewer');
+
+// Security
+$router->get('/login', [AuthController::class, 'showLogin']);
+$router->post('/login', [AuthController::class, 'login']);
+$router->post('/logout', [AuthController::class, 'logout']);
+
+// Dashboard
+$router->get('/', [DashboardController::class, 'index'], [$auth]);
+
+// Shareholders
+$router->get('/shareholders', [ShareholderController::class, 'index'], [$view]);
+$router->get('/shareholders/new', [ShareholderController::class, 'create'], [$admin]);
+$router->post('/shareholders', [ShareholderController::class, 'store'], [$admin]);
+$router->get('/shareholders/{id}/edit', [ShareholderController::class, 'edit'], [$admin]);
+$router->post('/shareholders/{id}', [ShareholderController::class, 'update'], [$admin]);
+
+// Share classes
+$router->get('/classes', [ShareClassController::class, 'index'], [$view]);
+$router->post('/classes', [ShareClassController::class, 'store'], [$admin]);
+
+// Issuances
+$router->get('/issuances', [IssuanceController::class, 'index'], [$view]);
+$router->get('/issuances/new', [IssuanceController::class, 'create'], [$admin]);
+$router->post('/issuances', [IssuanceController::class, 'store'], [$admin]);
+
+// Transfers
+$router->get('/transfers', [TransferController::class, 'index'], [$view]);
+$router->get('/transfers/new', [TransferController::class, 'create'], [$admin]);
+$router->post('/transfers', [TransferController::class, 'store'], [$admin]);
+
+// Cap table & register
+$router->get('/captable', [CapTableController::class, 'index'], [$view]);
+$router->get('/captable/export.csv', [CapTableController::class, 'exportCsv'], [$view]);
+$router->get('/register', [CapTableController::class, 'register'], [$view]);
+
+// Documents
+$router->get('/documents', [DocumentController::class, 'index'], [$view]);
+$router->get('/documents/certificates/new', [DocumentController::class, 'certificateForm'], [$admin]);
+$router->post('/documents/certificates', [DocumentController::class, 'issueCertificate'], [$admin]);
+$router->get('/documents/certificates/{id}', [DocumentController::class, 'certificate'], [$view]);
+$router->get('/documents/deeds/{id}', [DocumentController::class, 'deed'], [$view]);
+$router->get('/documents/minutes/new', [DocumentController::class, 'minutesForm'], [$admin]);
+$router->post('/documents/minutes', [DocumentController::class, 'minutes'], [$admin]);

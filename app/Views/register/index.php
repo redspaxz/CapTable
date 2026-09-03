@@ -1,0 +1,27 @@
+<?php use function App\{e, url, shares}; ?>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-0">Registre des mouvements de titres</h1>
+    <div class="text-muted small">AUSCGIE (Acte uniforme OHADA), art. 716 — <?= e($company['name'] ?? '') ?></div>
+  </div>
+  <button class="btn btn-outline-dark" onclick="window.print()">🖨 Imprimer</button>
+</div>
+<table class="table table-sm table-striped bg-white shadow-sm">
+  <thead class="table-dark"><tr><th>#</th><th>Date</th><th>Type</th><th>Titulaire</th><th>Contrepartie</th><th>Catégorie</th><th class="text-end">Titres</th><th>Référence</th></tr></thead>
+  <tbody>
+    <?php foreach ($movements as $m):
+      $labels = ['issuance' => 'Émission', 'transfer_out' => 'Cession — sortie', 'transfer_in' => 'Cession — entrée']; ?>
+    <tr>
+      <td><?= (int) $m['id'] ?></td>
+      <td><?= e($m['movement_date']) ?></td>
+      <td><span class="badge bg-<?= $m['movement_type'] === 'issuance' ? 'success' : 'warning' ?>"><?= e($labels[$m['movement_type']] ?? $m['movement_type']) ?></span></td>
+      <td><?= e($m['shareholder_name'] ?? '—') ?></td>
+      <td><?= e($m['counterparty_name'] ?? '—') ?></td>
+      <td><?= e($m['class_code']) ?></td>
+      <td class="text-end"><?= shares((int) $m['quantity']) ?></td>
+      <td><?= e($m['reference']) ?></td>
+    </tr>
+    <?php endforeach; ?>
+    <?php if ($movements === []): ?><tr><td colspan="8" class="text-center text-muted py-4">Registre vide.</td></tr><?php endif; ?>
+  </tbody>
+</table>

@@ -1,0 +1,7 @@
+body { background: #f2f4f7; }
+.certificate { background: #fffdf5; }
+@media print {
+  .navbar, .no-print, .alert { display: none !important; }
+  body { background: #fff; }
+  .card { border: 1px solid #000 !important; box-shadow: none !important; }
+}
