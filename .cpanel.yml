@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/ttecwymc/public_html/ctms
+    - /bin/cp -R * $DEPLOYPATH
