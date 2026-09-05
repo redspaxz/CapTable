@@ -2,4 +2,8 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/ttecwymc/public_html/ctms
-    - /bin/cp -R * $DEPLOYPATH
+    # Copy application code and the root .htaccess explicitly:
+    # a bare `cp -R *` skips dotfiles (including .htaccess) and would
+    # also drag the .git directory into the web root.
+    - /bin/cp -R app config database public $DEPLOYPATH/
+    - /bin/cp .htaccess $DEPLOYPATH/

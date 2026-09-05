@@ -1,0 +1,16 @@
+# Shared-hosting layout (cPanel): the whole repository is deployed inside
+# the web root. Application internals are forbidden; every other request
+# is served from public/.
+
+RewriteEngine On
+
+# Never serve application internals or metadata
+RewriteRule ^(app|config|database)(/|$) - [F]
+RewriteRule (^|/)\.git(/|$) - [F]
+RewriteRule (^|/)\.env$ - [F]
+RewriteRule (^|/)\.cpanel\.yml$ - [F]
+
+# Front controller and assets live in public/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ public/$1 [L]

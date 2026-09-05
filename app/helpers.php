@@ -14,6 +14,9 @@ function e(mixed $value): string
 function url(string $path = '/'): string
 {
     $base = rtrim(\App\Core\App::config('app.base_url'), '/');
+    if ($base === '') {
+        $base = \App\Core\Request::basePath();
+    }
     return $base . '/' . ltrim($path, '/');
 }
 

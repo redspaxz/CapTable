@@ -53,6 +53,26 @@ php -S localhost:8080 -t public public/router.php
 
 Comptes de démonstration (mot de passe `password`) : `admin@ttechgroup.cm` (admin), `finance@ttechgroup.cm` (finance).
 
+## Déploiement cPanel (hébergement mutualisé)
+
+Le dépôt peut être déployé tel quel dans un sous-répertoire du web root (ex. `public_html/ctms`) via le **Git Versioning** de cPanel :
+
+1. Créer le dépôt Git dans cPanel (URL du dépôt GitHub, branche `main`).
+2. Le fichier `.cpanel.yml` copie `app/`, `config/`, `database/`, `public/` et le `.htaccess` racine vers `public_html/ctms`.
+3. Le `.htaccess` racine interdit l'accès web à `app/`, `config/`, `database/`, `.git` et `.env`, et route toutes les requêtes vers `public/`.
+4. Créer la base MySQL dans cPanel, importer `database/schema.mysql.sql` (phpMyAdmin), puis créer le fichier `.env` **sur le serveur** à côté de `.htaccess` (il n'est pas versionné) :
+
+   ```
+   DB_HOST=localhost
+   DB_NAME=<votre_base>
+   DB_USER=<votre_utilisateur>
+   DB_PASS=<votre_mot_de_passe>
+   ```
+
+5. L'application détecte automatiquement son sous-chemin (`/ctms`) — aucune configuration d'URL n'est nécessaire. Forcer `APP_BASE_URL` dans `.env` reste possible.
+
+Après le premier déploiement, changer le mot de passe des comptes de démonstration ou les supprimer.
+
 ## Notes OHADA
 
 - Registre des mouvements de titres conformément à l'art. 716 AUSCGIE.
