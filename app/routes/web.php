@@ -16,6 +16,25 @@ $auth = [Auth::class, 'requireLogin'];
 $admin = fn() => Auth::requireRole('admin', 'finance');
 $view = fn() => Auth::requireRole('admin', 'finance', 'viewer');
 
+// Diagnostics: PHP version, detected base path, DB connectivity
+$router->get('/health', function () {
+    header('Content-Type: application/json; charset=UTF-8');
+    try {
+        App\Core\Database::pdo();
+        $db = 'connected (' . App\Core\App::config('db.driver') . ')';
+    } catch (\Throwable $e) {
+        $db = 'error: ' . $e->getMessage();
+    }
+    echo json_encode([
+        'app' => 'CapTable',
+        'php' => PHP_VERSION,
+        'base_path' => App\Core\Request::basePath(),
+        'database' => $db,
+        'time' => date('c'),
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return '';
+});
+
 // Security
 $router->get('/login', [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'login']);

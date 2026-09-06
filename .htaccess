@@ -10,7 +10,7 @@ RewriteRule (^|/)\.git(/|$) - [F]
 RewriteRule (^|/)\.env$ - [F]
 RewriteRule (^|/)\.cpanel\.yml$ - [F]
 
-# Front controller and assets live in public/
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+# Everything else — including the bare directory index — goes through
+# public/. No -f/-d conditions: a -d skip would break "/ctms/" because
+# the repository root itself has no index file.
 RewriteRule ^(.*)$ public/$1 [L]
