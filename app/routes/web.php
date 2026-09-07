@@ -68,6 +68,7 @@ $router->post('/transfers', [TransferController::class, 'store'], [$admin]);
 $router->get('/captable', [CapTableController::class, 'index'], [$view]);
 $router->get('/captable/export.csv', [CapTableController::class, 'exportCsv'], [$view]);
 $router->get('/register', [CapTableController::class, 'register'], [$view]);
+$router->get('/api/holdings/{id}', [CapTableController::class, 'holdings'], [$auth]);
 
 // Documents
 $router->get('/documents', [DocumentController::class, 'index'], [$view]);

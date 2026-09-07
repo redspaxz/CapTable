@@ -13,7 +13,7 @@
   <div class="col-lg-7">
     <div class="card bg-white shadow-sm">
       <div class="card-header fw-bold">Certificats d'actions</div>
-      <table class="table table-hover mb-0">
+      <table class="table table-hover mb-0" data-enhance="table">
         <thead><tr><th>N° certificat</th><th>Actionnaire</th><th>Catégorie</th><th class="text-end">Titres</th><th>Émis le</th><th></th></tr></thead>
         <tbody>
           <?php foreach ($certificates as $c): ?>

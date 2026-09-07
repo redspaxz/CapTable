@@ -3,7 +3,7 @@
 
 <div class="row">
   <div class="col-lg-8">
-    <table class="table table-hover bg-white shadow-sm">
+    <table class="table table-hover bg-white shadow-sm" data-enhance="table">
       <thead class="table-dark"><tr><th>Code</th><th>Libellé</th><th class="text-end">Valeur nominale</th><th class="text-end">Autorisées</th><th class="text-end">En circulation</th></tr></thead>
       <tbody>
         <?php foreach ($classes as $c): ?>

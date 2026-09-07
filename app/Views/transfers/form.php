@@ -1,7 +1,7 @@
 <?php use function App\{e, url}; ?>
 <h1 class="h4 mb-3">Nouvelle cession de droits sociaux</h1>
 <div class="card bg-white shadow-sm"><div class="card-body">
-<form method="post" action="<?= url('/transfers') ?>">
+<form id="transferForm" method="post" action="<?= url('/transfers') ?>">
   <?= App\Core\Csrf::field() ?>
   <div class="row g-3">
     <div class="col-md-3">
@@ -38,6 +38,7 @@
       <input name="deed_reference" class="form-control" placeholder="ACT-… (généré si vide)">
     </div>
   </div>
+  <div id="holdingHint" class="form-text mb-2" aria-live="polite"></div>
   <div class="alert alert-light border mt-3 mb-2 small">
     La cession sera inscrite au registre des mouvements de titres après validation des disponibilités du cédant.
   </div>

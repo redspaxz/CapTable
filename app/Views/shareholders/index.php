@@ -2,16 +2,11 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">Actionnaires</h1>
   <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
-  <a href="<?= url('/shareholders/new') ?>" class="btn btn-primary">+ Nouvel actionnaire</a>
+  <a href="<?= url('/shareholders/new') ?>" class="btn btn-primary"><i class="bi bi-person-plus me-1"></i>Nouvel actionnaire</a>
   <?php endif; ?>
 </div>
 
-<form class="row g-2 mb-3" method="get" action="<?= url('/shareholders') ?>">
-  <div class="col-md-4"><input class="form-control" name="q" value="<?= e($search) ?>" placeholder="Rechercher par nom ou CNI/RC…"></div>
-  <div class="col-auto"><button class="btn btn-outline-secondary">Rechercher</button></div>
-</form>
-
-<table class="table table-hover bg-white shadow-sm">
+<table class="table table-hover bg-white shadow-sm" data-enhance="table">
   <thead class="table-dark">
     <tr><th>Nom</th><th>Type</th><th>CNI / RC</th><th>Contact</th><th class="text-end">Titres</th><th></th></tr>
   </thead>

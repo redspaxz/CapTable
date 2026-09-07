@@ -5,8 +5,8 @@
     <div class="text-muted"><?= e($company['name'] ?? '') ?> — RCCM <?= e($company['rccm'] ?? '—') ?></div>
   </div>
   <div>
-    <button class="btn btn-outline-dark" onclick="window.print()">🖨 Imprimer</button>
-    <a class="btn btn-outline-success" href="<?= url('/captable/export.csv') ?>">⬇ Export CSV</a>
+    <button class="btn btn-outline-dark" onclick="window.print()" data-bs-toggle="tooltip" data-bs-title="Imprimer la répartition">🖨 Imprimer</button>
+    <a class="btn btn-outline-success" href="<?= url('/captable/export.csv') ?>" data-bs-toggle="tooltip" data-bs-title="Télécharger en CSV (séparateur ;)">⬇ Export CSV</a>
   </div>
 </div>
 

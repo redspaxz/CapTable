@@ -54,6 +54,21 @@ class CapTableController extends Controller
         exit;
     }
 
+    /** JSON: current holdings of one shareholder, keyed by share class id. */
+    public function holdings(int $id): string
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+        $holdings = [];
+        foreach (Database::all('SELECT id FROM share_classes') as $class) {
+            $qty = $this->ownership->holding($id, (int) $class['id']);
+            if ($qty > 0) {
+                $holdings[(string) $class['id']] = $qty;
+            }
+        }
+        echo json_encode(['shareholder_id' => $id, 'holdings' => $holdings]);
+        return '';
+    }
+
     public function register(): string
     {
         return $this->view('register/index', [

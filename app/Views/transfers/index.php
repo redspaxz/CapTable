@@ -1,9 +1,9 @@
 <?php use function App\{e, url, shares}; ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">Cessions de droits sociaux</h1>
-  <a href="<?= url('/transfers/new') ?>" class="btn btn-primary">+ Nouvelle cession</a>
+  <a href="<?= url('/transfers/new') ?>" class="btn btn-primary"><i class="bi bi-arrow-left-right me-1"></i>Nouvelle cession</a>
 </div>
-<table class="table table-hover bg-white shadow-sm">
+<table class="table table-hover bg-white shadow-sm" data-enhance="table">
   <thead class="table-dark"><tr><th>Référence acte</th><th>Date</th><th>Cédant</th><th>Cessionnaire</th><th>Catégorie</th><th class="text-end">Titres</th><th></th></tr></thead>
   <tbody>
     <?php foreach ($transfers as $t): ?>

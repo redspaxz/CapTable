@@ -17,19 +17,19 @@
 <section class="row g-3 mb-4" aria-label="Indicateurs clés">
   <?php
   $cards = [
-      ['Capital social', money($totalCapital), 'bi-bank2', 'primary'],
-      ['Titres en circulation', shares($totalShares), 'bi-pie-chart-fill', 'success'],
-      ['Actionnaires', (string) $shareholderCount, 'bi-people-fill', 'info'],
-      ['Mouvements au registre', (string) $movementCount, 'bi-journal-bookmark-fill', 'warning'],
+      ['Capital social', $totalCapital, ' XAF', 'bi-bank2', 'primary'],
+      ['Titres en circulation', $totalShares, '', 'bi-pie-chart-fill', 'success'],
+      ['Actionnaires', $shareholderCount, '', 'bi-people-fill', 'info'],
+      ['Mouvements au registre', $movementCount, '', 'bi-journal-bookmark-fill', 'warning'],
   ];
-  foreach ($cards as [$label, $value, $icon, $color]): ?>
+  foreach ($cards as [$label, $raw, $suffix, $icon, $color]): ?>
   <div class="col-6 col-xl-3">
     <div class="card stat-card h-100">
       <div class="card-body d-flex align-items-center gap-3">
         <span class="stat-icon text-bg-<?= $color ?>"><i class="bi <?= $icon ?>"></i></span>
         <div>
           <div class="text-muted small"><?= e($label) ?></div>
-          <div class="fs-5 fw-bold text-<?= $color ?>"><?= e($value) ?></div>
+          <div class="fs-5 fw-bold text-<?= $color ?>" data-countup="<?= (int) $raw ?>" data-suffix="<?= e($suffix) ?>"><?= e(shares((int) $raw) . $suffix) ?></div>
         </div>
       </div>
     </div>

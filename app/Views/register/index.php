@@ -6,7 +6,7 @@
   </div>
   <button class="btn btn-outline-dark" onclick="window.print()">🖨 Imprimer</button>
 </div>
-<table class="table table-sm table-striped bg-white shadow-sm">
+<table class="table table-sm table-striped bg-white shadow-sm" data-enhance="table">
   <thead class="table-dark"><tr><th>#</th><th>Date</th><th>Type</th><th>Titulaire</th><th>Contrepartie</th><th>Catégorie</th><th class="text-end">Titres</th><th>Référence</th></tr></thead>
   <tbody>
     <?php foreach ($movements as $m):

@@ -84,6 +84,23 @@ body {
 
 :focus-visible { outline: 3px solid rgba(23, 88, 140, 0.45); outline-offset: 2px; }
 
+/* Interactive tables (JS-enhanced) */
+.tj-sortable { cursor: pointer; user-select: none; }
+.tj-sortable::after {
+  content: "\21C5";
+  opacity: 0.35;
+  margin-left: 0.4rem;
+  font-size: 0.75em;
+}
+.tj-sortable[data-dir="asc"]::after { content: "\2191"; opacity: 1; }
+.tj-sortable[data-dir="desc"]::after { content: "\2193"; opacity: 1; }
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .bg-white { background-color: var(--bs-body-bg) !important; }
+[data-bs-theme="dark"] .table { --bs-table-bg: transparent; }
+[data-bs-theme="dark"] .certificate { background: #fffdf5; color: #212529; }
+[data-bs-theme="dark"] .card .text-muted { color: var(--bs-secondary-color) !important; }
+
 @media print {
   .app-header, .app-footer, .no-print, .alert { display: none !important; }
   body { background: #fff; display: block; }

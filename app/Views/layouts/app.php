@@ -10,7 +10,7 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="<?= url('/assets/css/app.css') ?>" rel="stylesheet">
 </head>
-<body>
+<body data-baseurl="<?= e(url('/')) ?>">
 <?php if (Auth::check()): ?>
 <header class="app-header sticky-top">
   <nav class="navbar navbar-expand-lg navbar-dark" aria-label="Navigation principale">
@@ -35,6 +35,7 @@
           <li class="nav-item"><a class="nav-link" href="<?= url('/documents') ?>"><i class="bi bi-file-earmark-text me-1"></i>Documents</a></li>
         </ul>
         <div class="d-flex align-items-lg-center flex-column flex-lg-row gap-2">
+          <button id="themeToggle" type="button" class="btn btn-outline-light btn-sm" aria-label="Basculer le thème"></button>
           <span class="navbar-text d-flex align-items-center gap-2">
             <i class="bi bi-person-circle fs-5"></i>
             <span><?= e(Auth::user()['name'] ?? '') ?></span>
@@ -77,6 +78,7 @@
 <?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= url('/assets/js/app.js') ?>" defer></script>
 <?php if (!empty($charts)): ?><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script><?php endif; ?>
 </body>
 </html>

@@ -1,9 +1,9 @@
 <?php use function App\{e, url, money, shares}; ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0">Émissions d'actions</h1>
-  <a href="<?= url('/issuances/new') ?>" class="btn btn-primary">+ Nouvelle émission</a>
+  <a href="<?= url('/issuances/new') ?>" class="btn btn-primary"><i class="bi bi-plus-square me-1"></i>Nouvelle émission</a>
 </div>
-<table class="table table-hover bg-white shadow-sm">
+<table class="table table-hover bg-white shadow-sm" data-enhance="table">
   <thead class="table-dark"><tr><th>Référence</th><th>Date</th><th>Actionnaire</th><th>Catégorie</th><th>Apport</th><th class="text-end">Titres</th><th class="text-end">Valeur totale</th></tr></thead>
   <tbody>
     <?php foreach ($issuances as $i): ?>
