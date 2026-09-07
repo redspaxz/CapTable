@@ -16,14 +16,18 @@ $auth = [Auth::class, 'requireLogin'];
 $admin = fn() => Auth::requireRole('admin', 'finance');
 $view = fn() => Auth::requireRole('admin', 'finance', 'viewer');
 
-// Diagnostics: PHP version, detected base path, DB connectivity
+// Diagnostics: PHP version, detected base path, DB connectivity.
+// Unauthenticated on purpose (shared-hosting debugging) but never leaks
+// credentials: full error text only when APP_DEBUG=true.
 $router->get('/health', function () {
     header('Content-Type: application/json; charset=UTF-8');
     try {
         App\Core\Database::pdo();
         $db = 'connected (' . App\Core\App::config('db.driver') . ')';
     } catch (\Throwable $e) {
-        $db = 'error: ' . $e->getMessage();
+        $db = App\Core\App::config('app.debug')
+            ? 'error: ' . $e->getMessage()
+            : 'error ' . $e->getCode() . ' (connexion refusée ou base inaccessible)';
     }
     echo json_encode([
         'app' => 'CapTable',

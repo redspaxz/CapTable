@@ -58,8 +58,8 @@ document.addEventListener('DOMContentLoaded', function () {
   new Chart(el, {
     type: 'doughnut',
     data: {
-      labels: <?= json_encode(array_map(fn($h) => $h['shareholder']['name'], $holdings)) ?>,
-      datasets: [{ data: <?= json_encode(array_map(fn($h) => $h['total'], $holdings)) ?>, backgroundColor: colors }]
+      labels: <?= json_encode(array_map(fn($h) => $h['shareholder']['name'], $holdings), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+      datasets: [{ data: <?= json_encode(array_map(fn($h) => $h['total'], $holdings), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>, backgroundColor: colors }]
     },
     options: { plugins: { legend: { position: 'bottom' } } }
   });

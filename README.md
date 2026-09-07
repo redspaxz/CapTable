@@ -73,6 +73,22 @@ Le dépôt peut être déployé tel quel dans un sous-répertoire du web root (e
 
 Après le premier déploiement, changer le mot de passe des comptes de démonstration ou les supprimer.
 
+## Sécurité (référentiel OWASP)
+
+Contrôles en place :
+
+- **Injection SQL** : 100 % des requêtes passent par des requêtes préparées PDO paramétrées.
+- **XSS** : échappement systématique (`htmlspecialchars` ENT_QUOTES) ; JSON embarqué encodé avec `JSON_HEX_*` ; en-tête CSP.
+- **CSRF** : jeton par session vérifié (`hash_equals`) sur tous les formulaires POST, y compris la déconnexion.
+- **Contrôle d'accès** : rôles admin / finance / viewer appliqués par middleware sur chaque route ; écritures réservées admin+finance.
+- **Authentification** : bcrypt (`password_hash`), régénération de l'ID de session à la connexion, limitation anti-force brute (5 essais / 10 min / adresse IP).
+- **Sessions** : cookies `HttpOnly`, `SameSite=Lax`, `Secure` en HTTPS, expiration après 30 min d'inactivité.
+- **En-têtes de sécurité** : `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, CSP, HSTS (en HTTPS).
+- **Divulgation d'informations** : `/health` masque le détail des erreurs hors mode debug ; `.env`, `.git`, `app/`, `config/`, `database/` interdits par `.htaccess`.
+- **Injection CSV** : cellules préfixées quand elles commencent par `= + - @ \` avant export.
+
+Recommandations production : changer les mots de passe de démo, restreindre ou désactiver `/health`, envisager SRI sur les CDN et un journal d'audit des actions utilisateurs.
+
 ## Notes OHADA
 
 - Registre des mouvements de titres conformément à l'art. 716 AUSCGIE.

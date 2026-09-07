@@ -30,18 +30,26 @@ class CapTableController extends Controller
 
     public function exportCsv(): void
     {
+        // Neutralize spreadsheet formula injection in user-controlled cells
+        $guard = static function (mixed $cell): string {
+            $cell = (string) $cell;
+            if ($cell !== '' && strpbrk($cell[0], '=+-@\\') !== false) {
+                return "'" . $cell;
+            }
+            return $cell;
+        };
         $rows = [['Actionnaire', 'Type', 'Catégorie', 'Titres', 'Valeur nominale totale', 'Pourcentage']];
         $total = $this->ownership->totalShares();
         foreach ($this->ownership->byShareholder() as $h) {
             foreach ($h['rows'] as $row) {
-                $rows[] = [
+                $rows[] = array_map($guard, [
                     $h['shareholder']['name'],
                     $h['shareholder']['type'],
                     $row['class']['code'] . ' — ' . $row['class']['name'],
                     (string) $row['quantity'],
                     (string) $row['value'],
                     number_format($total > 0 ? $row['quantity'] / $total * 100 : 0, 2, '.', ''),
-                ];
+                ]);
             }
         }
         header('Content-Type: text/csv; charset=UTF-8');
