@@ -85,8 +85,9 @@ bash scripts/uat.sh          # port personnalisé : UAT_PORT=9090 bash scripts/u
 | T13 Restrictions | lock-up refusé, clause d'agrément → cession en attente → approbation → registre + référence notariée |
 | T14 Conformité | conventions réglementées ≥ 10 % + alerte CAC, déclaration UBO, moteur de vote AGE |
 | T15 Convertibles & devise | OCA modélisée, pro-forma dilué, équivalent EUR (taux 655,957) |
+| T16 Cohérence projection | `share_holdings` identique au repli du registre après chaque écriture (agrément, exercice, émission) |
 
-**Dernière exécution : 2026-09-07 — 53/53 réussis** (PHP 8.2, SQLite). Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
+**Dernière exécution : 2026-09-07 — 54/54 réussis** (PHP 8.2, SQLite). Les lectures temps réel passent par la projection `share_holdings` maintenue transactionnellement (registres volumineux : < 1 ms / 2 MiB contre ~120 ms / 90 MiB par repli PHP) ; l'historique à date reste reconstitué en SQL. Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
 
 ## Déploiement cPanel (hébergement mutualisé)
 
