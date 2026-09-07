@@ -99,3 +99,39 @@ CREATE TABLE IF NOT EXISTS documents (
     created_by INTEGER,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+-- v2: Ownership & Equity Administration
+ALTER TABLE share_classes ADD COLUMN liquidation_multiplier REAL NOT NULL DEFAULT 1.0;
+ALTER TABLE share_classes ADD COLUMN liquidation_priority INTEGER NOT NULL DEFAULT 100;
+ALTER TABLE share_classes ADD COLUMN participating INTEGER NOT NULL DEFAULT 1;
+
+ALTER TABLE users ADD COLUMN shareholder_id INTEGER REFERENCES shareholders(id);
+ALTER TABLE users ADD COLUMN stakeholder_role TEXT;
+
+ALTER TABLE settings ADD COLUMN fmv_per_share INTEGER;
+
+CREATE TABLE IF NOT EXISTS option_grants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shareholder_id INTEGER NOT NULL REFERENCES shareholders(id),
+    share_class_id INTEGER NOT NULL REFERENCES share_classes(id),
+    quantity INTEGER NOT NULL,
+    exercised_qty INTEGER NOT NULL DEFAULT 0,
+    strike_price INTEGER NOT NULL DEFAULT 0,
+    granted_at TEXT NOT NULL,
+    vest_months INTEGER NOT NULL DEFAULT 48,
+    cliff_months INTEGER NOT NULL DEFAULT 12,
+    status TEXT NOT NULL DEFAULT 'active',
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS option_exercises (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    grant_id INTEGER NOT NULL REFERENCES option_grants(id),
+    quantity INTEGER NOT NULL,
+    exercise_date TEXT NOT NULL,
+    reference TEXT,
+    share_issuance_id INTEGER,
+    created_by INTEGER,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);

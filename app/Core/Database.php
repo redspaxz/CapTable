@@ -9,6 +9,7 @@ use PDO;
 class Database
 {
     private static ?PDO $pdo = null;
+    private static int $txDepth = 0;
 
     public static function pdo(): PDO
     {
@@ -67,16 +68,36 @@ class Database
         return (int) self::pdo()->lastInsertId();
     }
 
+    /**
+     * Transaction with nesting support: inner calls run inside a
+     * SAVEPOINT instead of opening a second transaction (SQLite/MySQL
+     * both reject nested beginTransaction).
+     */
     public static function transaction(callable $fn): mixed
     {
         $pdo = self::pdo();
-        $pdo->beginTransaction();
+        if (self::$txDepth === 0) {
+            $pdo->beginTransaction();
+        } else {
+            $pdo->exec('SAVEPOINT sp' . self::$txDepth);
+        }
+        self::$txDepth++;
         try {
             $result = $fn();
-            $pdo->commit();
+            self::$txDepth--;
+            if (self::$txDepth === 0) {
+                $pdo->commit();
+            } else {
+                $pdo->exec('RELEASE SAVEPOINT sp' . self::$txDepth);
+            }
             return $result;
         } catch (\Throwable $e) {
-            $pdo->rollBack();
+            self::$txDepth--;
+            if (self::$txDepth === 0) {
+                $pdo->rollBack();
+            } else {
+                $pdo->exec('ROLLBACK TO SAVEPOINT sp' . self::$txDepth);
+            }
             throw $e;
         }
     }

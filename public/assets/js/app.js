@@ -203,4 +203,26 @@
     });
     updTransfer();
   }
+  // ---- Grant form: live vesting preview
+  var grantForm = document.getElementById('grantForm');
+  if (grantForm) {
+    var gQty = grantForm.querySelector('[name="quantity"]');
+    var gVest = grantForm.querySelector('[name="vest_months"]');
+    var gCliff = grantForm.querySelector('[name="cliff_months"]');
+    var gOut = document.getElementById('vestingPreview');
+    var updGrant = function () {
+      if (!gOut) return;
+      var qty = parseInt(gQty.value || 0, 10);
+      var vest = parseInt(gVest.value || 0, 10);
+      var cliff = parseInt(gCliff.value || 0, 10);
+      if (!(qty > 0 && vest > 0)) { gOut.textContent = 'Renseignez quantité et durée de vesting pour l\'aperçu.'; return; }
+      var perMonth = Math.floor(qty / vest);
+      var cliffQty = Math.floor(qty * Math.min(cliff, vest) / vest);
+      gOut.innerHTML = 'Aperçu : <strong>' + fmt(cliffQty) + '</strong> options acquises au cliff (' + cliff + ' mois), ' +
+        'puis <strong>' + fmt(perMonth) + '</strong> options/mois pendant ' + vest + ' mois — ' +
+        '<strong>' + fmt(qty) + '</strong> au terme.';
+    };
+    [gQty, gVest, gCliff].forEach(function (el) { el.addEventListener('input', updGrant); });
+    updGrant();
+  }
 })();

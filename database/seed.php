@@ -53,9 +53,12 @@ Database::execute(
     ['Auditeur lecture seule', 'viewer@ttechgroup.cm', password_hash('password', PASSWORD_DEFAULT), 'viewer']
 );
 
+// Portal employee demo profile (password: "password") — inserted AFTER the
+// founders so demo ids stay stable: 1 Edmund, 2 Marie, 3 Holding, 4 Paul.
+
 Database::execute(
-    'INSERT INTO settings (company_name, legal_form, rccm, niu, head_office) VALUES (?,?,?,?,?)',
-    ['T&Tech Consulting Group', 'SA', 'RCCM/DLA/2020/B/1234', 'M092511234567X', 'Douala, Cameroun']
+    'INSERT INTO settings (company_name, legal_form, rccm, niu, head_office, fmv_per_share) VALUES (?,?,?,?,?,?)',
+    ['T&Tech Consulting Group', 'SA', 'RCCM/DLA/2020/B/1234', 'M092511234567X', 'Douala, Cameroun', 10000]
 );
 
 // Share class: 10 000 XAF nominal, 100 000 authorized
@@ -79,6 +82,23 @@ foreach ($people as [$type, $name, $idType, $idNumber, $city, $email, $phone]) {
 }
 [$edmund, $marie, $holding] = $shareholderIds;
 
+// Link the admin account to the founder profile (stakeholder portal)
+Database::execute(
+    'UPDATE users SET shareholder_id = ?, stakeholder_role = ? WHERE email = ?',
+    [$edmund, 'founder', 'admin@ttechgroup.cm']
+);
+
+// Employee shareholder + portal account + demo option grant
+Database::execute(
+    'INSERT INTO shareholders (type, name, id_type, id_number, address, email, phone) VALUES (?,?,?,?,?,?,?)',
+    ['individual', 'Paul Ayissi', 'CNI', '9988776655', 'Douala', 'paul@ttechgroup.cm', '+237 6 90 00 00 04']
+);
+$employeeId = (int) Database::lastId();
+Database::execute(
+    'INSERT INTO users (name, email, password_hash, role, shareholder_id, stakeholder_role) VALUES (?,?,?,?,?,?)',
+    ['Paul Ayissi (employé)', 'employee@ttechgroup.cm', password_hash('password', PASSWORD_DEFAULT), 'viewer', $employeeId, 'employee']
+);
+
 $classId = (int) Database::scalar('SELECT id FROM share_classes WHERE code = ?', ['ORD']);
 $service = new ShareService();
 
@@ -89,5 +109,12 @@ $service->issue($classId, $holding, 2000, 'in_kind', '2020-03-15', 'AGC-2020-003
 
 // A transfer in 2024: Marie cedes 500 shares to T&Tech Holding
 $service->transfer($classId, $marie, $holding, 500, '2024-06-20', 'ACT-20240620-101');
+
+// ESOP demo: 600 options to the employee, granted 2024-01-01, 48-month
+// vesting with a 12-month cliff (400 vested as of 2026-09).
+(new \App\Modules\Options\OptionService())->grant(
+    $employeeId, $classId, 600, 5000, '2024-01-01', 48, 12,
+    'Plan d\'intéressement — démonstration'
+);
 
 echo "Seed OK — admin@ttechgroup.cm / password\n";

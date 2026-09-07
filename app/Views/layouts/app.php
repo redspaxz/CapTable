@@ -25,8 +25,11 @@
       </button>
       <div class="collapse navbar-collapse" id="nav">
         <ul class="navbar-nav me-auto gap-lg-1">
+          <li class="nav-item"><a class="nav-link" href="<?= url('/portal') ?>"><i class="bi bi-person-badge me-1"></i>Mon espace</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/') ?>"><i class="bi bi-speedometer2 me-1"></i>Tableau de bord</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/captable') ?>"><i class="bi bi-pie-chart me-1"></i>Capital</a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= url('/waterfall') ?>"><i class="bi bi-water me-1"></i>Waterfall</a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= url('/options') ?>"><i class="bi bi-award me-1"></i>Options</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/shareholders') ?>"><i class="bi bi-people me-1"></i>Actionnaires</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/classes') ?>"><i class="bi bi-layers me-1"></i>Catégories</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/issuances') ?>"><i class="bi bi-plus-square me-1"></i>Émissions</a></li>

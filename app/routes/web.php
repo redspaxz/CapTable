@@ -4,8 +4,11 @@
 
 use App\Core\Auth;
 use App\Modules\CapTable\CapTableController;
+use App\Modules\CapTable\WaterfallController;
 use App\Modules\Dashboard\DashboardController;
 use App\Modules\Documents\DocumentController;
+use App\Modules\Options\OptionController;
+use App\Modules\Portals\PortalController;
 use App\Modules\Security\AuthController;
 use App\Modules\Shares\IssuanceController;
 use App\Modules\Shares\ShareClassController;
@@ -71,8 +74,20 @@ $router->post('/transfers', [TransferController::class, 'store'], [$admin]);
 // Cap table & register
 $router->get('/captable', [CapTableController::class, 'index'], [$view]);
 $router->get('/captable/export.csv', [CapTableController::class, 'exportCsv'], [$view]);
+$router->get('/captable/history', [CapTableController::class, 'history'], [$view]);
+$router->get('/waterfall', [WaterfallController::class, 'index'], [$view]);
 $router->get('/register', [CapTableController::class, 'register'], [$view]);
 $router->get('/api/holdings/{id}', [CapTableController::class, 'holdings'], [$auth]);
+
+// Options & vesting (ESOP)
+$router->get('/options', [OptionController::class, 'index'], [$view]);
+$router->get('/options/new', [OptionController::class, 'create'], [$admin]);
+$router->post('/options', [OptionController::class, 'store'], [$admin]);
+$router->get('/options/{id}', [OptionController::class, 'show'], [$view]);
+$router->post('/options/{id}/exercise', [OptionController::class, 'exercise'], [$admin]);
+
+// Stakeholder portal
+$router->get('/portal', [PortalController::class, 'index'], [$auth]);
 
 // Documents
 $router->get('/documents', [DocumentController::class, 'index'], [$view]);

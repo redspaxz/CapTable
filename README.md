@@ -8,11 +8,13 @@ Architecture : **monolithe modulaire** en PHP pur (MVC maison), MySQL/MariaDB, v
 
 | Module | Fonction |
 |---|---|
-| Security | Connexion, rôles (admin / finance / viewer), CSRF |
+| Security | Connexion, rôles (admin / finance / viewer), CSRF, anti-force brute |
 | Dashboard | Indicateurs : capital social, titres, actionnaires, mouvements |
 | Shareholders | Actionnaires (personnes physiques et morales, CNI/RC) |
-| Shares | Catégories d'actions, émissions (apport en numéraire/nature), cessions |
-| CapTable | Répartition du capital, %, graphique, export CSV, registre des mouvements de titres (art. 716 AUSCGIE) |
+| Shares | Catégories d'actions (avec préférence de liquidation), émissions (apport en numéraire/nature), cessions |
+| CapTable | Répartition du capital, %, graphique, export CSV, registre des mouvements de titres (art. 716 AUSCGIE), **historique reconstitué à toute date**, **waterfall de liquidation** |
+| Options (ESOP) | Attributions d'options avec **vesting mensuel + cliff**, échéancier, **exercice automatisé** (émission + registre en une transaction) |
+| Portals | **Portail des parties prenantes** : tableau de bord dédié (fondateur, investisseur, administrateur, employé) — titres détenus, statut des options, actions exercées, valeur acquise |
 | Documents | Certificats d'actions, actes de cession, PV d'assemblée générale |
 
 ## Structure
@@ -51,7 +53,9 @@ php database/seed.php
 php -S localhost:8080 -t public public/router.php
 ```
 
-Comptes de démonstration (mot de passe `password`) : `admin@ttechgroup.cm` (admin), `finance@ttechgroup.cm` (finance), `viewer@ttechgroup.cm` (lecture seule).
+Comptes de démonstration (mot de passe `password`) : `admin@ttechgroup.cm` (admin/fondateur), `finance@ttechgroup.cm` (finance), `viewer@ttechgroup.cm` (lecture seule), `employee@ttechgroup.cm` (employé, portail avec options).
+
+> **Mise à jour d'une installation v1** : ré-importer `database/schema.<driver>.sql` (les `CREATE TABLE IF NOT EXISTS` sont ignorés, les `ALTER` ajoutent les colonnes et tables v2 : options, préférences de liquidation, liens portail).
 
 ## Recette UAT
 
@@ -72,8 +76,11 @@ bash scripts/uat.sh          # port personnalisé : UAT_PORT=9090 bash scripts/u
 | T7 Documents | certificat d'actions émis/imprimable + garde-fou, acte de cession, PV d'assemblée avec présence exacte |
 | T8 Contrôle d'accès | rôle viewer : lecture seule, écriture rejetée (403) |
 | T9 Sécurité | CSRF (419), redirection anonyme, API protégée, diagnostic `/health` |
+| T10 Options & vesting | attribution, acquises au cliff, exercice automatisé (émission EX- + registre), garde-fou d'exercice |
+| T11 Waterfall | préférence de liquidation puis reliquat au prorata — montants exacts |
+| T12 Portails & historique | portail employé (options, valeur acquise), portail fondateur (titres), capital reconstitué à date |
 
-**Dernière exécution : 2026-09-07 — 31/31 réussis** (PHP 8.2, SQLite). Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
+**Dernière exécution : 2026-09-07 — 41/41 réussis** (PHP 8.2, SQLite). Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
 
 ## Déploiement cPanel (hébergement mutualisé)
 
@@ -117,6 +124,6 @@ Recommandations production : changer les mots de passe de démo, restreindre ou 
 - Interface en français ; documents générés (certificat d'actions, acte de cession, PV) suivent les usages OHADA.
 - Prix de cession et mentions manuscrites à compléter sur les originaux signés.
 
-## Roadmap (non inclus en v1)
+## Roadmap (non inclus)
 
-ESOP/options, tours de table et modélisation de dilution, instruments convertibles.
+Tours de table et modélisation de dilution, instruments convertibles (BSA, SAFE), interface d'administration des comptes portail, journal d'audit des actions utilisateurs.

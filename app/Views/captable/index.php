@@ -6,6 +6,8 @@
   </div>
   <div>
     <button class="btn btn-outline-dark" onclick="window.print()" data-bs-toggle="tooltip" data-bs-title="Imprimer la répartition">🖨 Imprimer</button>
+    <a class="btn btn-outline-primary" href="<?= url('/captable/history') ?>"><i class="bi bi-clock-history me-1"></i>Historique</a>
+    <a class="btn btn-outline-primary" href="<?= url('/waterfall') ?>"><i class="bi bi-water me-1"></i>Waterfall</a>
     <a class="btn btn-outline-success" href="<?= url('/captable/export.csv') ?>" data-bs-toggle="tooltip" data-bs-title="Télécharger en CSV (séparateur ;)">⬇ Export CSV</a>
   </div>
 </div>

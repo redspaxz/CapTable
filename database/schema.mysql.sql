@@ -111,3 +111,41 @@ CREATE TABLE IF NOT EXISTS documents (
     created_by INT DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- v2: Ownership & Equity Administration
+ALTER TABLE share_classes ADD COLUMN liquidation_multiplier DECIMAL(5,2) NOT NULL DEFAULT 1.00;
+ALTER TABLE share_classes ADD COLUMN liquidation_priority INT NOT NULL DEFAULT 100;
+ALTER TABLE share_classes ADD COLUMN participating TINYINT(1) NOT NULL DEFAULT 1;
+
+ALTER TABLE users ADD COLUMN shareholder_id INT NULL, ADD FOREIGN KEY users_sh (shareholder_id) REFERENCES shareholders(id);
+ALTER TABLE users ADD COLUMN stakeholder_role VARCHAR(20) NULL;
+ALTER TABLE settings ADD COLUMN fmv_per_share BIGINT UNSIGNED NULL;
+
+CREATE TABLE IF NOT EXISTS option_grants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shareholder_id INT NOT NULL,
+    share_class_id INT NOT NULL,
+    quantity INT UNSIGNED NOT NULL,
+    exercised_qty INT UNSIGNED NOT NULL DEFAULT 0,
+    strike_price BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    granted_at DATE NOT NULL,
+    vest_months INT UNSIGNED NOT NULL DEFAULT 48,
+    cliff_months INT UNSIGNED NOT NULL DEFAULT 12,
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (shareholder_id) REFERENCES shareholders(id),
+    FOREIGN KEY (share_class_id) REFERENCES share_classes(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS option_exercises (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    grant_id INT NOT NULL,
+    quantity INT UNSIGNED NOT NULL,
+    exercise_date DATE NOT NULL,
+    reference VARCHAR(120) DEFAULT NULL,
+    share_issuance_id INT DEFAULT NULL,
+    created_by INT DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (grant_id) REFERENCES option_grants(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

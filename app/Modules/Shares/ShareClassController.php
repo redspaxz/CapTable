@@ -32,6 +32,9 @@ class ShareClassController extends Controller
             'nominal_value' => Request::int('nominal_value'),
             'shares_authorized' => Request::int('shares_authorized'),
             'rights' => Request::str('rights'),
+            'liquidation_multiplier' => max(0.0, (float) Request::str('liquidation_multiplier', '1')),
+            'liquidation_priority' => max(1, Request::int('liquidation_priority', 100)),
+            'participating' => Request::str('participating', '1') === '1' ? 1 : 0,
         ];
         $v = new Validator($data);
         $v->required('code', 'name')->positive('nominal_value', 'shares_authorized');
@@ -40,8 +43,9 @@ class ShareClassController extends Controller
             redirect('/classes');
         }
         Database::execute(
-            'INSERT INTO share_classes (code, name, nominal_value, shares_authorized, rights) VALUES (?,?,?,?,?)',
-            [$data['code'], $data['name'], $data['nominal_value'], $data['shares_authorized'], $data['rights']]
+            'INSERT INTO share_classes (code, name, nominal_value, shares_authorized, rights, liquidation_multiplier, liquidation_priority, participating) VALUES (?,?,?,?,?,?,?,?)',
+            [$data['code'], $data['name'], $data['nominal_value'], $data['shares_authorized'], $data['rights'],
+             $data['liquidation_multiplier'], $data['liquidation_priority'], $data['participating']]
         );
         \App\flash('success', 'Catégorie d\'actions créée.');
         redirect('/classes');

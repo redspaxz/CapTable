@@ -80,7 +80,7 @@ has "$R" "Bassong-Essomba" && ok "modification d'un actionnaire" || ko "modifica
 echo "== T3 Catégories d'actions =="
 R=$(post /classes /classes /classes --data-urlencode "code=PREF" --data-urlencode "name=Actions preferentielles" \
     --data-urlencode "nominal_value=10000" --data-urlencode "shares_authorized=5000" \
-    --data-urlencode "rights=Dividende majore, sans droit de vote")
+    --data-urlencode "rights=Dividende majore, sans droit de vote" --data-urlencode "liquidation_multiplier=1.5" --data-urlencode "liquidation_priority=1" --data-urlencode "participating=0")
 has "$R" "PREF" && has "$R" "Actions preferentielles" && ok "création de la catégorie PREF" || ko "création catégorie PREF"
 
 # ---- T4 Émissions --------------------------------------------------------------
@@ -89,12 +89,12 @@ echo "== T4 Émissions =="
 PREF_ID=2
 [ -n "$PREF_ID" ] && ok "formulaire d'émission : catégorie PREF avec valeur nominale exposée" || ko "catégorie PREF introuvable dans le formulaire"
 R=$(post /issuances /issuances/new /issuances \
-    --data-urlencode "share_class_id=$PREF_ID" --data-urlencode "shareholder_id=4" \
+    --data-urlencode "share_class_id=$PREF_ID" --data-urlencode "shareholder_id=5" \
     --data-urlencode "quantity=1000" --data-urlencode "apport_type=cash" \
     --data-urlencode "issuance_date=2026-09-01" --data-urlencode "reference=AG-2026-PREF")
 has "$R" "AG-2026-PREF" && has "$R" "PREF" && ok "émission de 1 000 PREF à la CNP tracée" || ko "émission PREF"
 R=$(post /issuances /issuances/new /issuances/new \
-    --data-urlencode "share_class_id=$PREF_ID" --data-urlencode "shareholder_id=4" \
+    --data-urlencode "share_class_id=$PREF_ID" --data-urlencode "shareholder_id=5" \
     --data-urlencode "quantity=4500" --data-urlencode "apport_type=cash" \
     --data-urlencode "issuance_date=2026-09-01")
 has "$R" "Quota dépassé" && ok "dépassement du quota autorisé bloqué (4 500 > 4 000 restants)" || ko "quota autorisé non vérifié"
@@ -104,7 +104,7 @@ echo "== T5 Cessions =="
 ORD_ID=$(get /transfers/new | grep -oE 'value="[0-9]+">ORD' | head -1 | grep -oE '[0-9]+')
 R=$(post /transfers /transfers/new /transfers \
     --data-urlencode "share_class_id=$ORD_ID" --data-urlencode "seller_id=1" \
-    --data-urlencode "buyer_id=4" --data-urlencode "quantity=500" \
+    --data-urlencode "buyer_id=5" --data-urlencode "quantity=500" \
     --data-urlencode "transfer_date=2026-09-02" --data-urlencode "deed_reference=ACT-UAT-001")
 has "$R" "ACT-UAT-001" && has "$R" "Caisse Nationale" && ok "cession de 500 ORD (Edmund → CNP) enregistrée" || ko "cession ORD"
 R=$(post /transfers /transfers/new /transfers/new \
@@ -171,6 +171,45 @@ C=$(code /api/holdings/1)
 [ "$C" = 302 ] && ok "API holdings protégée par authentification" || ko "API exposée sans authentification ($C)"
 H=$(get /health)
 has "$H" "connected" && ok "diagnostic /health : base connectée" || ko "/health"
+
+# ---- T10 Options & vesting (ESOP) -----------------------------------------
+echo "== T10 Options & vesting =="
+post /login /login / --data-urlencode "email=admin@ttechgroup.cm" --data-urlencode "password=password" >/dev/null
+R=$(get /options)
+has "$R" "Paul Ayissi" && has "$R" "600" && ok "plan d'options : attribution seed (600, Paul) listée" || ko "attribution seed absente"
+R=$(post /options /options/new /options \
+    --data-urlencode "shareholder_id=5" --data-urlencode "share_class_id=1" \
+    --data-urlencode "quantity=1000" --data-urlencode "strike_price=5000" \
+    --data-urlencode "granted_at=2025-09-01" --data-urlencode "vest_months=24" \
+    --data-urlencode "cliff_months=12" --data-urlencode "notes=UAT")
+has "$R" "1 000" && has "$R" "500" && ok "attribution 1 000 options créée, 500 acquises (12/24 mois)" || ko "attribution UAT"
+R=$(post /options/2/exercise /options/2 /options/2 --data-urlencode "quantity=999" --data-urlencode "exercise_date=2026-09-07")
+has "$R" "Options insuffisantes" && ok "exercice au-delà des options exerçables bloqué (999 > 500)" || ko "garde-fou exercice"
+R=$(post /options/2/exercise /options/2 /options/2 --data-urlencode "quantity=500" --data-urlencode "exercise_date=2026-09-07")
+has "$R" "500" && ok "exercice de 500 options réalisé" || ko "exercice 500"
+R=$(get /issuances)
+has "$R" "EX-2026" && ok "exercice automatisé : émission EX- créée et listée" || ko "émission d'exercice absente"
+R=$(get /register)
+has "$R" "EX-2026" && ok "registre : mouvement d'exercice tracé" || ko "registre sans exercice"
+
+# ---- T11 Waterfall ----------------------------------------------------------
+echo "== T11 Waterfall =="
+# État : 10 500 ORD (participantes ×1) + 1 000 PREF (non participante, ×1.5, prio 1).
+# Sortie 150 000 000 : PREF 15 000 000, ORD 105 000 000, reliquat 30 000 000
+# au prorata ORD. Edmund : 45 000 000 + 12 857 142 = 57 857 142.
+R=$(get "/waterfall?exit_value=150000000")
+has "$R" "15 000 000" && has "$R" "57 857 142" && ok "waterfall : préférence PREF puis reliquat pro-rata exacts" || ko "calcul waterfall"
+
+# ---- T12 Portail des parties prenantes ---------------------------------------
+echo "== T12 Portail =="
+post /logout / -o /dev/null
+R=$(post /login /login /portal --data-urlencode "email=employee@ttechgroup.cm" --data-urlencode "password=password")
+has "$R" "Employ" && has "$R" "400" && has "$R" "2 000 000" && ok "portail employé : badge, options acquises (400) et valeur (2 000 000 XAF)" || ko "portail employé"
+post /logout / -o /dev/null
+R=$(post /login /login /portal --data-urlencode "email=admin@ttechgroup.cm" --data-urlencode "password=password")
+has "$R" "Fondateur" && has "$R" "4 500" && ok "portail fondateur : profil lié et titres (4 500)" || ko "portail fondateur"
+R=$(get "/captable/history?as_of=2024-01-01")
+has "$R" "10 000" && has "$R" "3 000" && ok "historique au 2024-01-01 : capital d'origine reconstitué (Marie 3 000)" || ko "historique capital"
 
 # ---- Bilan -------------------------------------------------------------------------------
 echo

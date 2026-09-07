@@ -78,6 +78,34 @@ class CapTableController extends Controller
         return '';
     }
 
+    /** Cap table as of an arbitrary date, reconstructed from the register. */
+    public function history(): string
+    {
+        $asOf = \App\Core\Request::str('as_of', date('Y-m-d'));
+        if (!preg_match('#^\d{4}-\d{2}-\d{2}$#', $asOf)) {
+            $asOf = date('Y-m-d');
+        }
+        return $this->view('captable/history', [
+            'title' => 'Historique du capital',
+            'asOf' => $asOf,
+            'holdings' => $this->ownership->byShareholder($asOf),
+            'totalShares' => $this->ownership->totalShares($asOf),
+            'totalCapital' => $this->ownership->totalCapital($asOf),
+            'currentShares' => $this->ownership->totalShares(),
+            'company' => \App\company(),
+            'movements' => Database::all(
+                'SELECT m.*, s.name AS shareholder_name, cp.name AS counterparty_name, c.code AS class_code
+                 FROM share_movements m
+                 LEFT JOIN shareholders s ON s.id = m.shareholder_id
+                 LEFT JOIN shareholders cp ON cp.id = m.counterparty_id
+                 LEFT JOIN share_classes c ON c.id = m.share_class_id
+                 WHERE m.movement_date <= ?
+                 ORDER BY m.movement_date DESC, m.id DESC LIMIT 200',
+                [$asOf]
+            ),
+        ]);
+    }
+
     public function register(): string
     {
         return $this->view('register/index', [
