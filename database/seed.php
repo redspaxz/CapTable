@@ -35,6 +35,9 @@ Database::execute('DELETE FROM shareholders');
 Database::execute('DELETE FROM share_classes');
 Database::execute('DELETE FROM users');
 Database::execute('DELETE FROM settings');
+if ($driver === 'sqlite') {
+    Database::execute('DELETE FROM sqlite_sequence');
+}
 
 // Users (password: "password" for all demo accounts)
 Database::execute(
@@ -44,6 +47,10 @@ Database::execute(
 Database::execute(
     'INSERT INTO users (name, email, password_hash, role) VALUES (?,?,?,?)',
     ['Direction financière', 'finance@ttechgroup.cm', password_hash('password', PASSWORD_DEFAULT), 'finance']
+);
+Database::execute(
+    'INSERT INTO users (name, email, password_hash, role) VALUES (?,?,?,?)',
+    ['Auditeur lecture seule', 'viewer@ttechgroup.cm', password_hash('password', PASSWORD_DEFAULT), 'viewer']
 );
 
 Database::execute(
@@ -62,22 +69,25 @@ $people = [
     ['individual', 'Marie Ngo Bassong', 'CNI', '2233445566', 'Yaoundé', 'marie@ttechgroup.cm', '+237 6 90 00 00 02'],
     ['corporate', 'T&Tech Holding SARL', 'RC', 'RC/DLA/2018/789', 'Douala', 'holding@ttechgroup.cm', '+237 6 90 00 00 03'],
 ];
+$shareholderIds = [];
 foreach ($people as [$type, $name, $idType, $idNumber, $city, $email, $phone]) {
     Database::execute(
         'INSERT INTO shareholders (type, name, id_type, id_number, address, email, phone) VALUES (?,?,?,?,?,?,?)',
         [$type, $name, $idType, $idNumber, $city, $email, $phone]
     );
+    $shareholderIds[] = (int) Database::lastId();
 }
+[$edmund, $marie, $holding] = $shareholderIds;
 
 $classId = (int) Database::scalar('SELECT id FROM share_classes WHERE code = ?', ['ORD']);
 $service = new ShareService();
 
 // Constitutive issuance: capital 100 000 000 XAF = 10 000 shares
-$service->issue($classId, 1, 5000, 'cash', '2020-03-15', 'AGC-2020-001');
-$service->issue($classId, 2, 3000, 'cash', '2020-03-15', 'AGC-2020-002');
-$service->issue($classId, 3, 2000, 'in_kind', '2020-03-15', 'AGC-2020-003');
+$service->issue($classId, $edmund, 5000, 'cash', '2020-03-15', 'AGC-2020-001');
+$service->issue($classId, $marie, 3000, 'cash', '2020-03-15', 'AGC-2020-002');
+$service->issue($classId, $holding, 2000, 'in_kind', '2020-03-15', 'AGC-2020-003');
 
 // A transfer in 2024: Marie cedes 500 shares to T&Tech Holding
-$service->transfer($classId, 2, 3, 500, '2024-06-20', 'ACT-20240620-101');
+$service->transfer($classId, $marie, $holding, 500, '2024-06-20', 'ACT-20240620-101');
 
 echo "Seed OK — admin@ttechgroup.cm / password\n";

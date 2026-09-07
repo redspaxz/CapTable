@@ -51,7 +51,29 @@ php database/seed.php
 php -S localhost:8080 -t public public/router.php
 ```
 
-Comptes de démonstration (mot de passe `password`) : `admin@ttechgroup.cm` (admin), `finance@ttechgroup.cm` (finance).
+Comptes de démonstration (mot de passe `password`) : `admin@ttechgroup.cm` (admin), `finance@ttechgroup.cm` (finance), `viewer@ttechgroup.cm` (lecture seule).
+
+## Recette UAT
+
+La suite de recette `scripts/uat.sh` reconstruit une base de démonstration vierge, démarre l'application et déroule l'ensemble des workflows métier avec des assertions PASS/FAIL (aucune dépendance outre `php`, `curl` et `bash`) :
+
+```bash
+bash scripts/uat.sh          # port personnalisé : UAT_PORT=9090 bash scripts/uat.sh
+```
+
+| Domaine | Couverture |
+|---|---|
+| T1 Authentification | page de connexion, rejet d'un mot de passe erroné, connexion admin |
+| T2 Actionnaires | listing des fondateurs, création (personne morale), modification |
+| T3 Catégories d'actions | création d'une catégorie PREF |
+| T4 Émissions | émission tracée au registre, blocage du dépassement de quota autorisé |
+| T5 Cessions | cession enregistrée, blocage au-delà des disponibilités du cédant |
+| T6 Cap table & registre | pourcentages exacts multi-catégories, capital recalculé, export CSV, registre art. 716 |
+| T7 Documents | certificat d'actions émis/imprimable + garde-fou, acte de cession, PV d'assemblée avec présence exacte |
+| T8 Contrôle d'accès | rôle viewer : lecture seule, écriture rejetée (403) |
+| T9 Sécurité | CSRF (419), redirection anonyme, API protégée, diagnostic `/health` |
+
+**Dernière exécution : 2026-09-07 — 31/31 réussis** (PHP 8.2, SQLite). Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
 
 ## Déploiement cPanel (hébergement mutualisé)
 
