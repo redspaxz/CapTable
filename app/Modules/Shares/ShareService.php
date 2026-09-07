@@ -31,6 +31,7 @@ class ShareService
                  VALUES ("issuance",?,?,NULL,?,?,?,?)',
                 [$classId, $shareholderId, $quantity, $date, $reference, $this->currentUserId()]
             );
+            $this->adjustHolding($shareholderId, $classId, $quantity);
             return Database::lastId();
         });
     }
@@ -60,6 +61,8 @@ class ShareService
                  VALUES ("transfer_out",?,?,?,?,?,?,?)',
                 [$classId, $sellerId, $buyerId, $quantity, $date, $deedReference, $this->currentUserId()]
             );
+            $this->adjustHolding($sellerId, $classId, -$quantity);
+            $this->adjustHolding($buyerId, $classId, $quantity);
         });
     }
 
@@ -78,6 +81,40 @@ class ShareService
             );
             return Database::one('SELECT * FROM share_certificates WHERE id = ?', [Database::lastId()]);
         });
+    }
+
+    /**
+     * Keep the share_holdings projection in sync with the register. Runs
+     * inside the same transaction as the movement write; rows whose net
+     * quantity reaches zero are removed so the projection stays minimal.
+     * The register remains the source of truth (as-of reads ignore this).
+     */
+    private function adjustHolding(int $shareholderId, int $classId, int $delta): void
+    {
+        if ($delta === 0) {
+            return;
+        }
+        $row = Database::one(
+            'SELECT quantity FROM share_holdings WHERE shareholder_id = ? AND share_class_id = ?',
+            [$shareholderId, $classId]
+        );
+        $new = ($row ? (int) $row['quantity'] : 0) + $delta;
+        if ($new <= 0) {
+            Database::execute(
+                'DELETE FROM share_holdings WHERE shareholder_id = ? AND share_class_id = ?',
+                [$shareholderId, $classId]
+            );
+        } elseif ($row) {
+            Database::execute(
+                'UPDATE share_holdings SET quantity = ? WHERE shareholder_id = ? AND share_class_id = ?',
+                [$new, $shareholderId, $classId]
+            );
+        } else {
+            Database::execute(
+                'INSERT INTO share_holdings (shareholder_id, share_class_id, quantity) VALUES (?,?,?)',
+                [$shareholderId, $classId, $new]
+            );
+        }
     }
 
     private function currentUserId(): ?int

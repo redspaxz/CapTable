@@ -211,6 +211,11 @@ has "$R" "Fondateur" && has "$R" "4 500" && ok "portail fondateur : profil lié 
 R=$(get "/captable/history?as_of=2024-01-01")
 has "$R" "10 000" && has "$R" "3 000" && ok "historique au 2024-01-01 : capital d'origine reconstitué (Marie 3 000)" || ko "historique capital"
 
+# ---- T13 Cohérence de la projection du registre ------------------------------------------
+echo "== T13 Cohérence de la projection =="
+( cd "$BASE" && DB_DRIVER=sqlite php scripts/check_holdings.php ) >/dev/null 2>&1 \
+    && ok "share_holdings identique au repli du registre" || ko "projection divergente du registre"
+
 # ---- Bilan -------------------------------------------------------------------------------
 echo
 echo "=================================================="

@@ -27,6 +27,7 @@ if ($driver === 'sqlite') {
 }
 
 Database::execute('DELETE FROM share_movements');
+Database::execute('DELETE FROM share_holdings');
 Database::execute('DELETE FROM share_issuances');
 Database::execute('DELETE FROM share_transfers');
 Database::execute('DELETE FROM share_certificates');

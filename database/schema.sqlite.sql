@@ -79,6 +79,26 @@ CREATE TABLE IF NOT EXISTS share_movements (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Read-path indexes: the register is scanned by as-of reconstructions and
+-- the movement register page, which filter/sort on these columns.
+CREATE INDEX IF NOT EXISTS idx_movements_class_date ON share_movements (share_class_id, movement_date);
+CREATE INDEX IF NOT EXISTS idx_movements_date ON share_movements (movement_date);
+-- Covering index for as-of reconstructions: the date range plus the
+-- columns needed by the aggregation, so the fold is an index-only scan.
+CREATE INDEX IF NOT EXISTS idx_movements_cover ON share_movements (movement_date, movement_type, shareholder_id, counterparty_id, share_class_id, quantity);
+
+-- Projection of current net holdings, maintained in the same transaction
+-- as every register write. Current-state reads go through this table so
+-- large registers are never re-aggregated on every request; the append-only
+-- share_movements register remains the source of truth.
+CREATE TABLE IF NOT EXISTS share_holdings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shareholder_id INTEGER NOT NULL REFERENCES shareholders(id),
+    share_class_id INTEGER NOT NULL REFERENCES share_classes(id),
+    quantity INTEGER NOT NULL DEFAULT 0,
+    UNIQUE (shareholder_id, share_class_id)
+);
+
 CREATE TABLE IF NOT EXISTS share_certificates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     certificate_number TEXT NOT NULL UNIQUE,

@@ -89,6 +89,29 @@ CREATE TABLE IF NOT EXISTS share_movements (
     FOREIGN KEY (counterparty_id) REFERENCES shareholders(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Read-path indexes: the register is scanned by as-of reconstructions and
+-- the movement register page, which filter/sort on these columns.
+-- (shareholder_id / counterparty_id are already indexed via their FKs.)
+CREATE INDEX idx_movements_class_date ON share_movements (share_class_id, movement_date);
+CREATE INDEX idx_movements_date ON share_movements (movement_date);
+-- Covering index for as-of reconstructions: the date range plus the
+-- columns needed by the aggregation, so the fold is an index-only scan.
+CREATE INDEX idx_movements_cover ON share_movements (movement_date, movement_type, shareholder_id, counterparty_id, share_class_id, quantity);
+
+-- Projection of current net holdings, maintained in the same transaction
+-- as every register write. Current-state reads go through this table so
+-- large registers are never re-aggregated on every request; the append-only
+-- share_movements register remains the source of truth.
+CREATE TABLE IF NOT EXISTS share_holdings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    shareholder_id INT NOT NULL,
+    share_class_id INT NOT NULL,
+    quantity BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    UNIQUE KEY uq_shareholder_class (shareholder_id, share_class_id),
+    FOREIGN KEY (shareholder_id) REFERENCES shareholders(id),
+    FOREIGN KEY (share_class_id) REFERENCES share_classes(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS share_certificates (
     id INT AUTO_INCREMENT PRIMARY KEY,
     certificate_number VARCHAR(20) NOT NULL UNIQUE,

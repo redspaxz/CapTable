@@ -25,3 +25,18 @@
     <?php if ($movements === []): ?><tr><td colspan="8" class="text-center text-muted py-4">Registre vide.</td></tr><?php endif; ?>
   </tbody>
 </table>
+<?php if (($pages ?? 1) > 1): ?>
+<nav aria-label="Pagination du registre">
+  <ul class="pagination pagination-sm justify-content-center mt-3">
+    <li class="page-item <?= ($page ?? 1) <= 1 ? 'disabled' : '' ?>">
+      <a class="page-link" href="<?= url('/register?page=' . (($page ?? 1) - 1)) ?>">← Précédent</a>
+    </li>
+    <li class="page-item disabled">
+      <span class="page-link">Page <?= (int) ($page ?? 1) ?> / <?= (int) ($pages ?? 1) ?> — <?= number_format((float) ($total ?? 0), 0, ',', ' ') ?> mouvement(s)</span>
+    </li>
+    <li class="page-item <?= ($page ?? 1) >= ($pages ?? 1) ? 'disabled' : '' ?>">
+      <a class="page-link" href="<?= url('/register?page=' . (($page ?? 1) + 1)) ?>">Suivant →</a>
+    </li>
+  </ul>
+</nav>
+<?php endif; ?>

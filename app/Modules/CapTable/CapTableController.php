@@ -6,6 +6,7 @@ namespace App\Modules\CapTable;
 
 use App\Core\Controller;
 use App\Core\Database;
+use App\Core\Request;
 
 class CapTableController extends Controller
 {
@@ -67,14 +68,7 @@ class CapTableController extends Controller
     public function holdings(int $id): string
     {
         header('Content-Type: application/json; charset=UTF-8');
-        $holdings = [];
-        foreach (Database::all('SELECT id FROM share_classes') as $class) {
-            $qty = $this->ownership->holding($id, (int) $class['id']);
-            if ($qty > 0) {
-                $holdings[(string) $class['id']] = $qty;
-            }
-        }
-        echo json_encode(['shareholder_id' => $id, 'holdings' => $holdings]);
+        echo json_encode(['shareholder_id' => $id, 'holdings' => $this->ownership->holdingsOf($id)]);
         return '';
     }
 
@@ -108,6 +102,10 @@ class CapTableController extends Controller
 
     public function register(): string
     {
+        $perPage = 50;
+        $total = (int) Database::scalar('SELECT COUNT(*) FROM share_movements');
+        $pages = max(1, (int) ceil($total / $perPage));
+        $page = min(max(1, Request::int('page', 1)), $pages);
         return $this->view('register/index', [
             'title' => 'Registre des mouvements de titres',
             'movements' => Database::all(
@@ -116,9 +114,14 @@ class CapTableController extends Controller
                  LEFT JOIN shareholders s ON s.id = m.shareholder_id
                  LEFT JOIN shareholders cp ON cp.id = m.counterparty_id
                  LEFT JOIN share_classes c ON c.id = m.share_class_id
-                 ORDER BY m.movement_date DESC, m.id DESC'
+                 ORDER BY m.movement_date DESC, m.id DESC
+                 LIMIT ? OFFSET ?',
+                [$perPage, ($page - 1) * $perPage]
             ),
             'company' => \App\company(),
+            'page' => $page,
+            'pages' => $pages,
+            'total' => $total,
         ]);
     }
 }

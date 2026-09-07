@@ -10,127 +10,255 @@ use App\Core\Database;
  * Computes current (or as-of-date) holdings, ownership percentages and the
  * fully-diluted capital breakdown from the append-only share register,
  * plus the liquidation waterfall.
+ *
+ * The share_movements register (AUSCGIE art. 716) is the source of truth.
+ * Current-state reads go through the share_holdings projection - a summary
+ * table maintained in the same transaction as every register write - so
+ * large registers are never re-folded into PHP (or re-aggregated) on page
+ * views. As-of reconstruction still aggregates the register directly, since
+ * that operation is explicit, rare, and cannot be served by a current-state
+ * projection.
  */
 class OwnershipService
 {
+    /** @var array<string, mixed> per-request memo cache */
+    private static array $cache = [];
+
+    private static function cacheKey(string $method, ?string $asOf): string
+    {
+        return $method . '|' . ($asOf ?? 'current');
+    }
+
+    private static function remember(string $key, callable $fn): mixed
+    {
+        if (!array_key_exists($key, self::$cache)) {
+            self::$cache[$key] = $fn();
+        }
+        return self::$cache[$key];
+    }
+
     /**
-     * @param string|null $asOf ISO date — reconstruct the table as of that
+     * @param string|null $asOf ISO date - reconstruct the table as of that
      *                           date (movements after it are ignored).
      * @return array<int, array{shareholder: array, rows: array<int, array{class: array, quantity: int, value: int}>, total: int, percentage: float}>
      */
     public function byShareholder(?string $asOf = null): array
     {
-        // Recompute holdings from the append-only movement register.
-        $quantities = [];
-        $dateFilter = $asOf !== null ? 'WHERE movement_date <= :asof' : '';
-        $params = $asOf !== null ? ['asof' => $asOf] : [];
-        foreach (Database::all("SELECT * FROM share_movements {$dateFilter}", $params) as $m) {
-            $classId = (int) $m['share_class_id'];
-            if ($m['movement_type'] === 'issuance' || $m['movement_type'] === 'transfer_in') {
-                $quantities[(int) $m['shareholder_id']][$classId] =
-                    ($quantities[(int) $m['shareholder_id']][$classId] ?? 0) + (int) $m['quantity'];
-            } elseif ($m['movement_type'] === 'transfer_out') {
-                $quantities[(int) $m['shareholder_id']][$classId] =
-                    ($quantities[(int) $m['shareholder_id']][$classId] ?? 0) - (int) $m['quantity'];
-                if ((int) $m['counterparty_id'] > 0) {
-                    $quantities[(int) $m['counterparty_id']][$classId] =
-                        ($quantities[(int) $m['counterparty_id']][$classId] ?? 0) + (int) $m['quantity'];
-                }
+        return self::remember(self::cacheKey('byShareholder', $asOf), function () use ($asOf): array {
+            $net = $asOf === null
+                ? $this->netQuantities()
+                : $this->netQuantitiesAsOf($asOf);
+
+            $classes = [];
+            foreach (Database::all('SELECT * FROM share_classes') as $c) {
+                $classes[(int) $c['id']] = $c;
             }
-        }
+            $shareholders = [];
+            foreach (Database::all('SELECT * FROM shareholders ORDER BY name') as $s) {
+                $shareholders[(int) $s['id']] = $s;
+            }
 
-        $classes = [];
-        foreach (Database::all('SELECT * FROM share_classes') as $c) {
-            $classes[(int) $c['id']] = $c;
-        }
-        $shareholders = [];
-        foreach (Database::all('SELECT * FROM shareholders ORDER BY name') as $s) {
-            $shareholders[(int) $s['id']] = $s;
-        }
-
-        $totalShares = 0;
-        $result = [];
-        foreach ($quantities as $shareholderId => $byClass) {
-            $rows = [];
-            $shareholderTotal = 0;
-            foreach ($byClass as $classId => $qty) {
+            $totalShares = 0;
+            $result = [];
+            $index = [];
+            foreach ($net as $row) {
+                $shareholderId = (int) $row['shareholder_id'];
+                $classId = (int) $row['share_class_id'];
+                $qty = (int) $row['quantity'];
                 if ($qty <= 0 || !isset($classes[$classId], $shareholders[$shareholderId])) {
                     continue;
                 }
                 $class = $classes[$classId];
-                $rows[] = [
+                $entry = [
                     'class' => $class,
                     'quantity' => $qty,
                     'value' => $qty * (int) $class['nominal_value'],
                 ];
-                $shareholderTotal += $qty;
+                if (isset($index[$shareholderId])) {
+                    $result[$index[$shareholderId]]['rows'][] = $entry;
+                    $result[$index[$shareholderId]]['total'] += $qty;
+                } else {
+                    $index[$shareholderId] = count($result);
+                    $result[] = [
+                        'shareholder' => $shareholders[$shareholderId],
+                        'rows' => [$entry],
+                        'total' => $qty,
+                        'percentage' => 0.0,
+                    ];
+                }
                 $totalShares += $qty;
             }
-            if ($rows === []) {
-                continue;
-            }
-            $result[] = [
-                'shareholder' => $shareholders[$shareholderId],
-                'rows' => $rows,
-                'total' => $shareholderTotal,
-                'percentage' => 0.0,
-            ];
-        }
 
-        foreach ($result as &$entry) {
-            $entry['percentage'] = $totalShares > 0
-                ? $entry['total'] / $totalShares * 100 : 0.0;
-        }
-        usort($result, fn($a, $b) => $b['total'] <=> $a['total']);
-        return $result;
+            foreach ($result as &$entry) {
+                $entry['percentage'] = $totalShares > 0
+                    ? $entry['total'] / $totalShares * 100 : 0.0;
+            }
+            usort($result, fn($a, $b) => $b['total'] <=> $a['total']);
+            return $result;
+        });
+    }
+
+    /**
+     * Current net quantities from the share_holdings projection.
+     *
+     * @return array<int, array{shareholder_id: int, share_class_id: int, quantity: int}>
+     */
+    private function netQuantities(): array
+    {
+        return Database::all(
+            'SELECT h.shareholder_id, h.share_class_id, h.quantity
+             FROM share_holdings h
+             JOIN shareholders s ON s.id = h.shareholder_id
+             JOIN share_classes c ON c.id = h.share_class_id
+             WHERE h.quantity > 0
+             ORDER BY h.shareholder_id, h.share_class_id'
+        );
+    }
+
+    /**
+     * Net quantities reconstructed from the register up to a date.
+     *
+     * Aggregated in SQL with the same semantics as folding every movement:
+     * issuances add to the shareholder, transfer_out subtracts from the
+     * seller and adds to the counterparty. One GROUP BY, no row shipping.
+     *
+     * @return array<int, array{shareholder_id: int, share_class_id: int, quantity: int}>
+     */
+    private function netQuantitiesAsOf(string $asOf): array
+    {
+        return Database::all(
+            "SELECT shareholder_id, share_class_id, SUM(qty) AS quantity
+             FROM (
+                 SELECT shareholder_id, share_class_id,
+                        CASE WHEN movement_type IN ('issuance','transfer_in') THEN CAST(quantity AS SIGNED)
+                             WHEN movement_type = 'transfer_out' THEN -CAST(quantity AS SIGNED)
+                             ELSE 0 END AS qty
+                 FROM share_movements WHERE movement_date <= :asof
+                 UNION ALL
+                 SELECT counterparty_id AS shareholder_id, share_class_id, CAST(quantity AS SIGNED) AS qty
+                 FROM share_movements
+                 WHERE movement_type = 'transfer_out' AND counterparty_id > 0 AND movement_date <= :asof2
+             ) movements
+             GROUP BY shareholder_id, share_class_id
+             HAVING SUM(qty) > 0",
+            ['asof' => $asOf, 'asof2' => $asOf]
+        );
     }
 
     public function holding(int $shareholderId, int $classId, ?string $asOf = null): int
     {
-        $dateFilter = $asOf !== null ? 'AND movement_date <= :asof' : '';
-        $params = ['sid' => $shareholderId, 'cid' => $classId];
-        if ($asOf !== null) {
-            $params['asof'] = $asOf;
+        if ($asOf === null) {
+            $row = Database::one(
+                'SELECT quantity FROM share_holdings WHERE shareholder_id = ? AND share_class_id = ?',
+                [$shareholderId, $classId]
+            );
+            return (int) ($row['quantity'] ?? 0);
         }
+        $params = ['sid' => $shareholderId, 'cid' => $classId, 'asof' => $asOf];
         return (int) Database::scalar(
             "SELECT COALESCE(SUM(CASE
                 WHEN movement_type IN ('issuance','transfer_in') AND shareholder_id = :sid THEN quantity
                 WHEN movement_type = 'transfer_out' AND shareholder_id = :sid THEN -quantity
                 WHEN movement_type = 'transfer_out' AND counterparty_id = :sid THEN quantity
                 ELSE 0 END), 0)
-            FROM share_movements WHERE share_class_id = :cid {$dateFilter}",
+            FROM share_movements WHERE share_class_id = :cid AND movement_date <= :asof",
             $params
         );
+    }
+
+    /**
+     * Current (or as-of) holdings of one shareholder, keyed by share class id.
+     *
+     * @return array<string, int> class id => net quantity (positive only)
+     */
+    public function holdingsOf(int $shareholderId, ?string $asOf = null): array
+    {
+        $rows = $asOf === null
+            ? Database::all(
+                'SELECT share_class_id, quantity FROM share_holdings WHERE shareholder_id = ? AND quantity > 0',
+                [$shareholderId]
+            )
+            : Database::all(
+                "SELECT share_class_id,
+                        SUM(CASE
+                            WHEN movement_type IN ('issuance','transfer_in') AND shareholder_id = :sid THEN CAST(quantity AS SIGNED)
+                            WHEN movement_type = 'transfer_out' AND shareholder_id = :sid THEN -CAST(quantity AS SIGNED)
+                            WHEN movement_type = 'transfer_out' AND counterparty_id = :sid THEN CAST(quantity AS SIGNED)
+                            ELSE 0 END) AS quantity
+                 FROM share_movements
+                 WHERE (shareholder_id = :sid OR counterparty_id = :sid2) AND movement_date <= :asof
+                 GROUP BY share_class_id",
+                ['sid' => $shareholderId, 'sid2' => $shareholderId, 'asof' => $asOf]
+            );
+        $holdings = [];
+        foreach ($rows as $row) {
+            $qty = (int) $row['quantity'];
+            if ($qty > 0) {
+                $holdings[(string) $row['share_class_id']] = $qty;
+            }
+        }
+        return $holdings;
     }
 
     /** @return array<int, array{class: array, quantity: int, value: int}> */
     public function byClass(?string $asOf = null): array
     {
-        $rows = [];
-        foreach (Database::all('SELECT * FROM share_classes ORDER BY code') as $class) {
-            $qty = $this->outstanding((int) $class['id'], $asOf);
-            if ($qty > 0) {
-                $rows[] = [
-                    'class' => $class,
-                    'quantity' => $qty,
-                    'value' => $qty * (int) $class['nominal_value'],
-                ];
+        return self::remember(self::cacheKey('byClass', $asOf), function () use ($asOf): array {
+            $totals = $this->outstandingByClass($asOf);
+            $rows = [];
+            foreach (Database::all('SELECT * FROM share_classes ORDER BY code') as $class) {
+                $qty = $totals[(int) $class['id']] ?? 0;
+                if ($qty > 0) {
+                    $rows[] = [
+                        'class' => $class,
+                        'quantity' => $qty,
+                        'value' => $qty * (int) $class['nominal_value'],
+                    ];
+                }
             }
-        }
-        return $rows;
+            return $rows;
+        });
+    }
+
+    /**
+     * Issued quantity per class id. Transfers conserve class totals, so the
+     * sum of the projection equals the sum of issuances; as-of reads fall
+     * back to the register.
+     *
+     * @return array<int, int>
+     */
+    public function outstandingByClass(?string $asOf = null): array
+    {
+        return self::remember(self::cacheKey('outstandingByClass', $asOf), function () use ($asOf): array {
+            $rows = $asOf === null
+                ? Database::all('SELECT share_class_id, SUM(quantity) AS quantity FROM share_holdings GROUP BY share_class_id')
+                : Database::all(
+                    "SELECT share_class_id, SUM(CASE WHEN movement_type = 'issuance' THEN CAST(quantity AS SIGNED) ELSE 0 END) AS quantity
+                     FROM share_movements WHERE movement_date <= :asof
+                     GROUP BY share_class_id",
+                    ['asof' => $asOf]
+                );
+            $totals = [];
+            foreach ($rows as $row) {
+                $totals[(int) $row['share_class_id']] = (int) $row['quantity'];
+            }
+            return $totals;
+        });
     }
 
     public function outstanding(int $classId, ?string $asOf = null): int
     {
-        $dateFilter = $asOf !== null ? 'AND movement_date <= :asof' : '';
-        $params = [$classId];
-        if ($asOf !== null) {
-            $params['asof'] = $asOf;
+        if ($asOf === null) {
+            $row = Database::one(
+                'SELECT SUM(quantity) AS quantity FROM share_holdings WHERE share_class_id = ?',
+                [$classId]
+            );
+            return (int) ($row['quantity'] ?? 0);
         }
         return (int) Database::scalar(
             "SELECT COALESCE(SUM(CASE WHEN movement_type = 'issuance' THEN quantity ELSE 0 END), 0)
-            FROM share_movements WHERE share_class_id = ? {$dateFilter}",
-            $params
+            FROM share_movements WHERE share_class_id = ? AND movement_date <= :asof",
+            [$classId, 'asof' => $asOf]
         );
     }
 
@@ -164,17 +292,18 @@ class OwnershipService
             'SELECT * FROM share_classes ORDER BY liquidation_priority, id'
         );
         $holdings = $this->byShareholder();
+        $outstanding = $this->outstandingByClass();
         $remaining = $exitValue;
 
         // 1. Liquidation preferences, in priority order
         $steps = [];
         $paidRatioByClass = [];
         foreach ($classes as $class) {
-            $outstanding = $this->outstanding((int) $class['id']);
-            if ($outstanding <= 0) {
+            $outstandingQty = $outstanding[(int) $class['id']] ?? 0;
+            if ($outstandingQty <= 0) {
                 continue;
             }
-            $need = (int) floor($outstanding * (int) $class['nominal_value'] * (float) $class['liquidation_multiplier']);
+            $need = (int) floor($outstandingQty * (int) $class['nominal_value'] * (float) $class['liquidation_multiplier']);
             $paid = max(0, min($need, $remaining));
             $remaining -= $paid;
             $paidRatioByClass[(int) $class['id']] = $need > 0 ? $paid / $need : 0.0;
@@ -185,7 +314,7 @@ class OwnershipService
         $participatingShares = 0;
         foreach ($classes as $class) {
             if ((int) $class['participating'] === 1) {
-                $participatingShares += $this->outstanding((int) $class['id']);
+                $participatingShares += $outstanding[(int) $class['id']] ?? 0;
             }
         }
 
