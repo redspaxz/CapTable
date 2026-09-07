@@ -17,6 +17,11 @@ spl_autoload_register(function (string $class): void {
 require BASE_PATH . '/app/helpers.php';
 require BASE_PATH . '/app/global_helpers.php';
 
+// Application timezone (GMT+1 / Africa/Douala by default; override with
+// APP_TIMEZONE in .env). Set explicitly so php.ini and server defaults
+// (local dev: Europe/Berlin, production: UTC) never skew recorded dates.
+date_default_timezone_set(getenv('APP_TIMEZONE') ?: 'Africa/Douala');
+
 // Load .env if present (shared hosting: no shell environment variables).
 // Real environment variables always win over file values.
 $envFile = BASE_PATH . '/.env';
