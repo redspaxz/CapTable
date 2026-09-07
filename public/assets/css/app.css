@@ -1,7 +1,91 @@
-body { background: #f2f4f7; }
+/* CapTable — T&Tech Consulting Group */
+
+:root {
+  --tt-dark: #10233f;
+  --tt-brand: #17588c;
+  --tt-accent: #1d8a5f;
+  --tt-bg: #eef2f7;
+}
+
+body {
+  background: var(--tt-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header / navigation */
+.app-header .navbar {
+  background: linear-gradient(90deg, var(--tt-dark) 0%, var(--tt-brand) 100%);
+  box-shadow: 0 2px 12px rgba(16, 35, 63, 0.25);
+}
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 0.55rem;
+  background: var(--tt-accent);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.navbar .nav-link { border-radius: 0.4rem; padding-inline: 0.6rem; }
+.navbar .nav-link:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* Cards & tables */
+.card {
+  border: 0;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 4px rgba(16, 35, 63, 0.08);
+}
+.card-header {
+  background: #fff;
+  border-bottom: 1px solid #e6ebf2;
+  border-radius: 0.75rem 0.75rem 0 0 !important;
+  font-weight: 600;
+}
+.table thead.table-dark th { background: var(--tt-dark); border-color: #22405f; }
+
+/* KPI stat cards */
+.stat-card .stat-icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+.stat-card { transition: transform 0.12s ease; }
+.stat-card:hover { transform: translateY(-2px); }
+
+/* Login screen */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(1000px 500px at 15% -10%, rgba(29, 138, 95, 0.35), transparent 60%),
+    linear-gradient(135deg, var(--tt-dark) 0%, var(--tt-brand) 100%);
+}
+.login-card { max-width: 26rem; width: 100%; }
+.login-card .card-header {
+  background: transparent;
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Legal documents (certificate, deed, minutes) */
 .certificate { background: #fffdf5; }
+
+:focus-visible { outline: 3px solid rgba(23, 88, 140, 0.45); outline-offset: 2px; }
+
 @media print {
-  .navbar, .no-print, .alert { display: none !important; }
-  body { background: #fff; }
+  .app-header, .app-footer, .no-print, .alert { display: none !important; }
+  body { background: #fff; display: block; }
   .card { border: 1px solid #000 !important; box-shadow: none !important; }
 }
