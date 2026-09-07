@@ -65,7 +65,7 @@ Database::execute(
 // Share class: 10 000 XAF nominal, 100 000 authorized
 Database::execute(
     'INSERT INTO share_classes (code, name, nominal_value, shares_authorized, rights) VALUES (?,?,?,?,?)',
-    ['ORD', 'Actions ordinaires', 10000, 100000, 'Droit de vote, dividende, boni de liquidation']
+    ['ORD', 'Ordinary shares', 10000, 100000, 'Voting rights, dividends, liquidation bonus']
 );
 
 $people = [

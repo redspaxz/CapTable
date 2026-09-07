@@ -26,8 +26,8 @@ class ComplianceService
     {
         $form = strtoupper((string) (\App\company()['legal_form'] ?? 'SA'));
         return $form === 'SARL'
-            ? ['unit' => 'part sociale', 'plural' => 'parts sociales', 'register' => 'registre des parts']
-            : ['unit' => 'action', 'plural' => 'actions', 'register' => 'registre des mouvements de titres'];
+            ? ['unit' => 'social part', 'plural' => 'social parts', 'register' => 'register of parts']
+            : ['unit' => 'share', 'plural' => 'shares', 'register' => 'share movement register'];
     }
 
     /**
@@ -39,13 +39,13 @@ class ComplianceService
         $rules = [];
         $form = strtoupper((string) (\App\company()['legal_form'] ?? 'SA'));
         if ($form === 'SARL') {
-            $rules[] = 'SARL : cession à des tiers soumise à l\'agrément des associés (AUSCGIE art. 313 et s.) — transfert enregistré comme « en attente d\'approbation ».';
+            $rules[] = 'SARL: transfer to third parties subject to the partners\' consent (AUSCGIE art. 313 et seq.) — transfer recorded as "pending approval".';
         }
         if ((int) ($class['requires_approval'] ?? 0) === 1) {
-            $rules[] = 'Clause d\'agrément statutaire : approbation préalable requise.';
+            $rules[] = 'Statutory consent clause: prior approval required.';
         }
         if (!empty($class['lockup_until']) && $date < $class['lockup_until']) {
-            $rules[] = 'Inaliénabilité (lock-up) jusqu\'au ' . $class['lockup_until'] . ' — OHADA art. 2-1 : 10 ans maximum.';
+            $rules[] = 'Lock-up (inalienability) until ' . $class['lockup_until'] . ' — OHADA art. 2-1: 10 years maximum.';
         }
         return $rules;
     }
@@ -53,7 +53,7 @@ class ComplianceService
     public function isBlocked(array $class, string $date): bool
     {
         foreach ($this->transferRestrictions($class, $date) as $rule) {
-            if (str_contains($rule, 'Inaliénabilité')) {
+            if (str_contains($rule, 'Lock-up')) {
                 return true;
             }
         }
@@ -107,7 +107,7 @@ class ComplianceService
                 }
                 if (!$known) {
                     $alerts[] = sprintf(
-                        '%s détient %.2f %% (≥ %.0f %%) sans déclaration de bénéficiaire effectif enregistrée.',
+                        '%s holds %.2f %% (≥ %.0f %%) with no beneficial owner declaration recorded.',
                         $h['shareholder']['name'],
                         $h['percentage'],
                         self::UBO_THRESHOLD

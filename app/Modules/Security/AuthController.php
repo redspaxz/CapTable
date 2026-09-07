@@ -20,25 +20,25 @@ class AuthController extends Controller
         if (Auth::check()) {
             redirect('/');
         }
-        return View::render('auth/login', ['title' => 'Connexion']);
+        return View::render('auth/login', ['title' => 'Sign in']);
     }
 
     public function login(): void
     {
         Csrf::verify();
         if ($this->tooManyAttempts()) {
-            \App\flash('error', 'Trop de tentatives de connexion. Réessayez dans quelques minutes.');
+            \App\flash('error', 'Too many login attempts. Please try again in a few minutes.');
             redirect('/login');
         }
         $email = Request::str('email');
         $password = Request::str('password');
         if (filter_var($email, FILTER_VALIDATE_EMAIL) && Auth::attempt($email, $password)) {
             $this->clearAttempts();
-            \App\flash('success', 'Bienvenue !');
+            \App\flash('success', 'Welcome!');
             redirect('/');
         }
         $this->recordAttempt();
-        \App\flash('error', 'Identifiants invalides.');
+        \App\flash('error', 'Invalid credentials.');
         redirect('/login');
     }
 

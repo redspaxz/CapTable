@@ -26,7 +26,7 @@ class ShareholderController extends Controller
         }
         $sql .= ' ORDER BY s.name';
         return $this->view('shareholders/index', [
-            'title' => 'Actionnaires',
+            'title' => 'Shareholders',
             'shareholders' => Database::all($sql, $params),
             'search' => $search,
         ]);
@@ -35,7 +35,7 @@ class ShareholderController extends Controller
     public function create(): string
     {
         return $this->view('shareholders/form', [
-            'title' => 'Nouvel actionnaire',
+            'title' => 'New shareholder',
             'shareholder' => null,
             'errors' => [],
         ]);
@@ -58,7 +58,7 @@ class ShareholderController extends Controller
             [$data['type'], $data['name'], $data['id_number'], $data['id_type'], $data['address'],
              $data['email'], $data['phone'], $data['nationality'], $data['notes']]
         );
-        \App\flash('success', 'Actionnaire enregistré.');
+        \App\flash('success', 'Shareholder saved.');
         redirect('/shareholders');
     }
 
@@ -69,7 +69,7 @@ class ShareholderController extends Controller
             redirect('/shareholders');
         }
         return $this->view('shareholders/form', [
-            'title' => 'Modifier l\'actionnaire',
+            'title' => 'Edit shareholder',
             'shareholder' => $shareholder,
             'errors' => [],
         ]);
@@ -91,7 +91,7 @@ class ShareholderController extends Controller
             [$data['type'], $data['name'], $data['id_number'], $data['id_type'], $data['address'],
              $data['email'], $data['phone'], $data['nationality'], $data['notes'], $id]
         );
-        \App\flash('success', 'Actionnaire mis à jour.');
+        \App\flash('success', 'Shareholder updated.');
         redirect('/shareholders');
     }
 
@@ -105,7 +105,7 @@ class ShareholderController extends Controller
             'address' => Request::str('address'),
             'email' => Request::str('email'),
             'phone' => Request::str('phone'),
-            'nationality' => Request::str('nationality', 'Camerounaise'),
+            'nationality' => Request::str('nationality', 'Cameroonian'),
             'notes' => Request::str('notes'),
         ];
     }

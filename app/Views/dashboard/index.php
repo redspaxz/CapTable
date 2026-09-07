@@ -7,20 +7,20 @@
       · RCCM <?= e($company['rccm'] ?? '—') ?> · NIU <?= e($company['niu'] ?? '—') ?>
     </p>
   </div>
-  <nav class="btn-group" aria-label="Actions rapides">
-    <a class="btn btn-outline-primary" href="<?= url('/issuances/new') ?>"><i class="bi bi-plus-square me-1"></i>Émettre</a>
-    <a class="btn btn-outline-primary" href="<?= url('/transfers/new') ?>"><i class="bi bi-arrow-left-right me-1"></i>Céder</a>
+  <nav class="btn-group" aria-label="Quick actions">
+    <a class="btn btn-outline-primary" href="<?= url('/issuances/new') ?>"><i class="bi bi-plus-square me-1"></i>Issue</a>
+    <a class="btn btn-outline-primary" href="<?= url('/transfers/new') ?>"><i class="bi bi-arrow-left-right me-1"></i>Transfer</a>
     <a class="btn btn-outline-dark" href="<?= url('/captable/export.csv') ?>"><i class="bi bi-download me-1"></i>CSV</a>
   </nav>
 </header>
 
-<section class="row g-3 mb-4" aria-label="Indicateurs clés">
+<section class="row g-3 mb-4" aria-label="Key metrics">
   <?php
   $cards = [
-      ['Capital social', $totalCapital, ' XAF', 'bi-bank2', 'primary'],
-      ['Titres en circulation', $totalShares, '', 'bi-pie-chart-fill', 'success'],
-      ['Actionnaires', $shareholderCount, '', 'bi-people-fill', 'info'],
-      ['Mouvements au registre', $movementCount, '', 'bi-journal-bookmark-fill', 'warning'],
+      ['Share capital', $totalCapital, ' XAF', 'bi-bank2', 'primary'],
+      ['Outstanding shares', $totalShares, '', 'bi-pie-chart-fill', 'success'],
+      ['Shareholders', $shareholderCount, '', 'bi-people-fill', 'info'],
+      ['Register movements', $movementCount, '', 'bi-journal-bookmark-fill', 'warning'],
   ];
   foreach ($cards as [$label, $raw, $suffix, $icon, $color]): ?>
   <div class="col-6 col-xl-3">
@@ -38,15 +38,15 @@
 </section>
 
 <div class="row g-3">
-  <section class="col-lg-5" aria-label="Derniers mouvements">
+  <section class="col-lg-5" aria-label="Recent movements">
     <div class="card h-100">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-clock-history me-2"></i>Derniers mouvements de titres</span>
-        <a class="btn btn-sm btn-outline-secondary" href="<?= url('/register') ?>">Registre complet</a>
+        <span><i class="bi bi-clock-history me-2"></i>Recent share movements</span>
+        <a class="btn btn-sm btn-outline-secondary" href="<?= url('/register') ?>">Full register</a>
       </div>
       <ul class="list-group list-group-flush">
         <?php foreach ($recentMovements as $m):
-          $labels = ['issuance' => 'Émission', 'transfer_out' => 'Cession (sortie)', 'transfer_in' => 'Cession (entrée)'];
+          $labels = ['issuance' => 'Issuance', 'transfer_out' => 'Transfer (out)', 'transfer_in' => 'Transfer (in)'];
           $badge = $m['movement_type'] === 'issuance' ? 'success' : 'warning'; ?>
         <li class="list-group-item d-flex justify-content-between align-items-center">
           <div>
@@ -60,19 +60,19 @@
           </div>
         </li>
         <?php endforeach; ?>
-        <?php if ($recentMovements === []): ?><li class="list-group-item text-muted">Aucun mouvement.</li><?php endif; ?>
+        <?php if ($recentMovements === []): ?><li class="list-group-item text-muted">No movements yet.</li><?php endif; ?>
       </ul>
     </div>
   </section>
-  <section class="col-lg-7" aria-label="Répartition du capital">
+  <section class="col-lg-7" aria-label="Capital breakdown">
     <div class="card h-100">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-pie-chart me-2"></i>Répartition du capital</span>
-        <a class="btn btn-sm btn-outline-primary" href="<?= url('/captable') ?>">Cap table détaillé</a>
+        <span><i class="bi bi-pie-chart me-2"></i>Capital breakdown</span>
+        <a class="btn btn-sm btn-outline-primary" href="<?= url('/captable') ?>">Detailed cap table</a>
       </div>
       <div class="card-body d-flex flex-column justify-content-center text-muted">
-        <p class="mb-0">Consultez la page <a href="<?= url('/captable') ?>">Capital</a> pour le tableau complet,
-        le graphique de répartition et l'export CSV.</p>
+        <p class="mb-0">See the <a href="<?= url('/captable') ?>">Capital</a> page for the full table,
+        the ownership chart and the CSV export.</p>
       </div>
     </div>
   </section>

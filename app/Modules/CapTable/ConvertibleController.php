@@ -16,7 +16,7 @@ class ConvertibleController extends Controller
     {
         $service = new ConvertibleService();
         return $this->view('convertibles/index', [
-            'title' => 'Instruments convertibles',
+            'title' => 'Convertible instruments',
             'instruments' => $service->outstanding(),
             'proforma' => $service->proforma(),
             'currentShares' => (new OwnershipService())->totalShares(),
@@ -44,7 +44,7 @@ class ConvertibleController extends Controller
         $v = new Validator($data);
         $v->required('holder', 'issue_date')->date('issue_date');
         if ($v->fails() || $data['principal_amount'] <= 0 || $data['discount_pct'] < 0 || $data['discount_pct'] >= 100) {
-            \App\flash('error', 'Porteur, montant > 0 et remise 0–99 % obligatoires.');
+            \App\flash('error', 'Holder, amount > 0 and discount 0-99 % are required.');
             redirect('/convertibles');
         }
         Database::execute(
@@ -53,7 +53,7 @@ class ConvertibleController extends Controller
             [$data['type'], $data['holder'], $data['principal_amount'], $data['currency'],
              $data['discount_pct'], $data['valuation_cap'], $data['issue_date'], $data['notes']]
         );
-        \App\flash('success', 'Instrument convertible enregistré.');
+        \App\flash('success', 'Convertible instrument recorded.');
         redirect('/convertibles');
     }
 }

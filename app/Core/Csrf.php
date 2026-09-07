@@ -24,7 +24,7 @@ class Csrf
         $sent = $_POST['_csrf'] ?? '';
         if (!is_string($sent) || !hash_equals(self::token(), $sent)) {
             http_response_code(419);
-            exit('Session expirée — veuillez réessayer.');
+            exit('Session expired — please try again.');
         }
     }
 }

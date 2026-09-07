@@ -54,7 +54,7 @@ class App
             if (self::config('app.debug')) {
                 echo '<pre>' . \App\e($e->__toString()) . '</pre>';
             } else {
-                echo View::render('errors/500', ['title' => 'Erreur serveur']);
+                echo View::render('errors/500', ['title' => 'Server error']);
             }
         }
     }

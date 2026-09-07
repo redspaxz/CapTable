@@ -18,7 +18,7 @@ class ComplianceController extends Controller
         $service = new ComplianceService();
         $voting = new VotingService();
         return $this->view('compliance/index', [
-            'title' => 'Conformité OHADA',
+            'title' => 'OHADA compliance',
             'regulated' => $service->regulatedParties(),
             'ubo' => $service->uboStatus(),
             'threshold' => ComplianceService::REGULATED_THRESHOLD,
@@ -40,7 +40,7 @@ class ComplianceController extends Controller
     public function uboForm(): string
     {
         return $this->view('compliance/ubo_form', [
-            'title' => 'Déclarer un bénéficiaire effectif',
+            'title' => 'Declare a beneficial owner',
             'shareholders' => Database::all('SELECT * FROM shareholders ORDER BY name'),
         ]);
     }
@@ -61,7 +61,7 @@ class ComplianceController extends Controller
         $v = new Validator($data);
         $v->required('name', 'id_number')->date('declared_at');
         if ($v->fails() || $data['ownership_pct'] < 0 || $data['ownership_pct'] > 100) {
-            \App\flash('error', 'Nom, pièce d\'identité et pourcentage (0–100) obligatoires.');
+            \App\flash('error', 'Name, ID document and percentage (0-100) are required.');
             redirect('/compliance/ubo/new');
         }
         Database::execute(
@@ -70,7 +70,7 @@ class ComplianceController extends Controller
             [$data['name'], $data['id_number'], $data['nationality'], $data['ownership_pct'],
              $data['control_nature'], $data['shareholder_id'], $data['declared_at'], $data['notes']]
         );
-        \App\flash('success', 'Bénéficiaire effectif déclaré.');
+        \App\flash('success', 'Beneficial owner declared.');
         redirect('/compliance');
     }
 }

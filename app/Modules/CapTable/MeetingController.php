@@ -25,7 +25,7 @@ class MeetingController extends Controller
 
         $service = new VotingService();
         return $this->view('meeting/index', [
-            'title' => 'Assemblée & droits de vote',
+            'title' => 'Meeting & voting rights',
             'kind' => $kind,
             'quorum' => $quorum,
             'majority' => $majority,

@@ -21,7 +21,7 @@ class DashboardController extends Controller
     {
         $company = \App\company();
         return $this->view('dashboard/index', [
-            'title' => 'Tableau de bord',
+            'title' => 'Dashboard',
             'company' => $company,
             'totalShares' => $this->ownership->totalShares(),
             'totalCapital' => $this->ownership->totalCapital(),

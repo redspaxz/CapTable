@@ -17,7 +17,7 @@ class DocumentController extends Controller
     public function index(): string
     {
         return $this->view('documents/index', [
-            'title' => 'Documents & rapports',
+            'title' => 'Documents & reports',
             'certificates' => Database::all(
                 'SELECT cert.*, s.name AS shareholder_name, c.code AS class_code
                  FROM share_certificates cert
@@ -31,7 +31,7 @@ class DocumentController extends Controller
     public function certificateForm(): string
     {
         return $this->view('documents/certificate_form', [
-            'title' => 'Émettre un certificat d\'actions',
+            'title' => 'Issue a share certificate',
             'classes' => Database::all('SELECT * FROM share_classes ORDER BY code'),
             'shareholders' => Database::all('SELECT * FROM shareholders ORDER BY name'),
         ]);
@@ -45,11 +45,11 @@ class DocumentController extends Controller
         $quantity = Request::int('quantity');
         $holding = (new OwnershipService())->holding($shareholderId, $classId);
         if ($quantity <= 0 || $quantity > $holding) {
-            \App\flash('error', "Quantité invalide : l'actionnaire détient {$holding} action(s) dans cette catégorie.");
+            \App\flash('error', "Invalid quantity: the shareholder holds {$holding} share(s) in this class.");
             redirect('/documents/certificates/new');
         }
         (new ShareService())->issueCertificate($shareholderId, $classId, $quantity, date('Y-m-d'));
-        \App\flash('success', 'Certificat émis.');
+        \App\flash('success', 'Certificate issued.');
         redirect('/documents');
     }
 
@@ -90,7 +90,7 @@ class DocumentController extends Controller
             redirect('/transfers');
         }
         return $this->view('documents/deed', [
-            'title' => 'Acte de cession — ' . $transfer['deed_reference'],
+            'title' => 'Transfer deed — ' . $transfer['deed_reference'],
             'transfer' => $transfer,
             'company' => \App\company(),
         ]);
@@ -99,7 +99,7 @@ class DocumentController extends Controller
     public function minutesForm(): string
     {
         return $this->view('documents/minutes_form', [
-            'title' => 'PV d\'assemblée générale',
+            'title' => 'General meeting minutes',
             'holdings' => (new OwnershipService())->byShareholder(),
         ]);
     }
@@ -110,14 +110,14 @@ class DocumentController extends Controller
         $data = [
             'meeting_type' => Request::str('meeting_type', 'AGE'),
             'meeting_date' => Request::str('meeting_date', date('Y-m-d')),
-            'location' => Request::str('location', 'Siège social'),
+            'location' => Request::str('location', 'Registered office'),
             'agenda' => Request::str('agenda'),
             'resolutions' => Request::str('resolutions'),
         ];
         $v = new Validator($data);
         $v->required('meeting_type', 'meeting_date', 'agenda', 'resolutions')->date('meeting_date');
         if ($v->fails()) {
-            \App\flash('error', 'Type, date, ordre du jour et résolutions sont obligatoires.');
+            \App\flash('error', 'Type, date, agenda and resolutions are required.');
             redirect('/documents/minutes/new');
         }
         Database::execute(
@@ -131,7 +131,7 @@ class DocumentController extends Controller
             ]
         );
         return $this->view('documents/minutes', [
-            'title' => 'PV d\'assemblée',
+            'title' => 'Meeting minutes',
             'data' => $data,
             'holdings' => (new OwnershipService())->byShareholder(),
             'company' => \App\company(),

@@ -20,7 +20,7 @@ class CapTableController extends Controller
     public function index(): string
     {
         return $this->view('captable/index', [
-            'title' => 'Répartition du capital',
+            'title' => 'Capital breakdown',
             'holdings' => $this->ownership->byShareholder(),
             'byClass' => $this->ownership->byClass(),
             'totalShares' => $this->ownership->totalShares(),
@@ -40,7 +40,7 @@ class CapTableController extends Controller
             }
             return $cell;
         };
-        $rows = [['Actionnaire', 'Type', 'Catégorie', 'Titres', 'Valeur nominale totale', 'Pourcentage']];
+        $rows = [['Shareholder', 'Type', 'Class', 'Shares', 'Total par value', 'Percentage']];
         $total = $this->ownership->totalShares();
         foreach ($this->ownership->byShareholder() as $h) {
             foreach ($h['rows'] as $row) {
@@ -80,7 +80,7 @@ class CapTableController extends Controller
             $asOf = date('Y-m-d');
         }
         return $this->view('captable/history', [
-            'title' => 'Historique du capital',
+            'title' => 'Capital history',
             'asOf' => $asOf,
             'holdings' => $this->ownership->byShareholder($asOf),
             'totalShares' => $this->ownership->totalShares($asOf),
@@ -107,7 +107,7 @@ class CapTableController extends Controller
         $pages = max(1, (int) ceil($total / $perPage));
         $page = min(max(1, Request::int('page', 1)), $pages);
         return $this->view('register/index', [
-            'title' => 'Registre des mouvements de titres',
+            'title' => 'Share movement register',
             'movements' => Database::all(
                 'SELECT m.*, s.name AS shareholder_name, cp.name AS counterparty_name, c.code AS class_code
                  FROM share_movements m

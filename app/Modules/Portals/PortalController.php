@@ -64,7 +64,7 @@ class PortalController extends Controller
         $vestedValue = array_sum(array_map(fn($g) => $options->vestedValue($g), $myGrants));
 
         return $this->view('portal/index', [
-            'title' => 'Mon espace',
+            'title' => 'My space',
             'stakeholderRole' => $stakeholderRole,
             'myHolding' => $myHolding,
             'myGrants' => $myGrants,

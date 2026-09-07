@@ -5,28 +5,28 @@
       <div class="card-body p-5">
         <div class="text-center border-bottom pb-3 mb-4">
           <div class="text-uppercase fw-bold"><?= e($company['name'] ?? 'T&Tech Consulting Group') ?></div>
-          <div class="small">Société Anonyme avec Conseil d'Administration — Droit OHADA</div>
-          <div class="small">RCCM <?= e($company['rccm'] ?? '—') ?> · NIU <?= e($company['niu'] ?? '—') ?> · Siège : <?= e($company['head_office'] ?? '—') ?></div>
+          <div class="small">Public Limited Company with Board of Directors — OHADA law</div>
+          <div class="small">RCCM <?= e($company['rccm'] ?? '—') ?> · NIU <?= e($company['niu'] ?? '—') ?> · Registered office: <?= e($company['head_office'] ?? '—') ?></div>
         </div>
-        <h1 class="h5 text-center fw-bold mb-4">CERTIFICAT D'ACTIONS</h1>
-        <p class="text-center lead">Certificat N° <strong><?= e($cert['certificate_number']) ?></strong></p>
-        <p>La société certifie que <strong><?= e($cert['shareholder_name']) ?></strong>
-          (<?= $cert['shareholder_type'] === 'corporate' ? 'personne morale' : 'personne physique' ?>,
-          pièce d'identité : <?= e($cert['id_number']) ?>) est propriétaire de
-          <strong><?= shares((int) $cert['quantity']) ?> actions <?= e($cert['code']) ?></strong>
-          (<?= e($cert['class_name']) ?>) de la valeur nominale unitaire inscrite au capital social.</p>
-        <p class="small text-muted">Ce certificat est émis en application des dispositions de l'Acte uniforme relatif au droit des sociétés commerciales et du GIE (AUSCGIE). Il devra être restitué à la société en cas de cession des droits qu'il représente.</p>
+        <h1 class="h5 text-center fw-bold mb-4">SHARE CERTIFICATE</h1>
+        <p class="text-center lead">Certificate No. <strong><?= e($cert['certificate_number']) ?></strong></p>
+        <p>The company certifies that <strong><?= e($cert['shareholder_name']) ?></strong>
+          (<?= $cert['shareholder_type'] === 'corporate' ? 'corporate entity' : 'individual' ?>,
+          ID document: <?= e($cert['id_number']) ?>) is the owner of
+          <strong><?= shares((int) $cert['quantity']) ?> <?= e($cert['code']) ?> shares</strong>
+          (<?= e($cert['class_name']) ?>) of the unit par value recorded in the share capital.</p>
+        <p class="small text-muted">This certificate is issued pursuant to the provisions of the Uniform Act on commercial companies and GIE (AUSCGIE). It must be returned to the company upon transfer of the rights it represents.</p>
         <div class="d-flex justify-content-between mt-5">
-          <div>Émis le <?= e($cert['issue_date']) ?></div>
+          <div>Issued on <?= e($cert['issue_date']) ?></div>
           <div class="text-center">
             <div style="height: 60px"></div>
-            <div class="border-top px-5 pt-1 small">Le Directeur Général</div>
+            <div class="border-top px-5 pt-1 small">The Managing Director</div>
           </div>
         </div>
       </div>
     </div>
     <div class="text-center mt-3 no-print">
-      <button class="btn btn-dark" onclick="window.print()">🖨 Imprimer le certificat</button>
+      <button class="btn btn-dark" onclick="window.print()">🖨 Print certificate</button>
     </div>
   </div>
 </div>

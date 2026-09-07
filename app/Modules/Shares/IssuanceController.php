@@ -16,7 +16,7 @@ class IssuanceController extends Controller
     public function index(): string
     {
         return $this->view('issuances/index', [
-            'title' => 'Émissions d\'actions',
+            'title' => 'Share issuances',
             'issuances' => Database::all(
                 'SELECT i.*, s.name AS shareholder_name, c.code AS class_code, c.nominal_value
                  FROM share_issuances i
@@ -35,7 +35,7 @@ class IssuanceController extends Controller
             $class['remaining'] = (int) $class['shares_authorized'] - $service->outstanding((int) $class['id']);
         }
         return $this->view('issuances/form', [
-            'title' => 'Nouvelle émission',
+            'title' => 'New issuance',
             'classes' => $classes,
             'shareholders' => Database::all('SELECT * FROM shareholders ORDER BY name'),
         ]);
@@ -59,12 +59,12 @@ class IssuanceController extends Controller
         $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$data['share_class_id']]);
         $ownership = new OwnershipService();
         if ($v->fails() || !$class) {
-            \App\flash('error', 'Classe, actionnaire, quantité et date sont obligatoires.');
+            \App\flash('error', 'Class, shareholder, quantity and date are required.');
             redirect('/issuances/new');
         }
         $remaining = (int) $class['shares_authorized'] - $ownership->outstanding($data['share_class_id']);
         if ($data['quantity'] > $remaining) {
-            \App\flash('error', "Quota dépassé : seulement {$remaining} action(s) disponible(s) pour émission dans cette catégorie.");
+            \App\flash('error', "Quota exceeded: only {$remaining} share(s) remain available for issuance in this class.");
             redirect('/issuances/new');
         }
 
@@ -76,7 +76,7 @@ class IssuanceController extends Controller
             $data['issuance_date'],
             $data['reference'] !== '' ? $data['reference'] : 'EM-' . date('Ymd') . '-' . random_int(100, 999)
         );
-        \App\flash('success', 'Émission enregistrée au registre des mouvements de titres.');
+        \App\flash('success', 'Issuance recorded in the share movement register.');
         redirect('/issuances');
     }
 }

@@ -29,14 +29,14 @@ class OptionService
         string $notes = ''
     ): int {
         if ($quantity <= 0 || $vestMonths <= 0) {
-            throw new \InvalidArgumentException('Quantité et durée de vesting doivent être positives.');
+            throw new \InvalidArgumentException('Quantity and vesting duration must be positive.');
         }
         if ($cliffMonths < 0 || $cliffMonths > $vestMonths) {
-            throw new \InvalidArgumentException('Le cliff doit être compris entre 0 et la durée de vesting.');
+            throw new \InvalidArgumentException('The cliff must be between 0 and the vesting duration.');
         }
         $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$classId]);
         if (!$class) {
-            throw new \InvalidArgumentException('Catégorie d\'actions inconnue.');
+            throw new \InvalidArgumentException('Unknown share class.');
         }
         Database::execute(
             'INSERT INTO option_grants (shareholder_id, share_class_id, quantity, strike_price, granted_at, vest_months, cliff_months, notes)
@@ -88,7 +88,7 @@ class OptionService
         for ($m = 1; $m <= $vest; $m++) {
             $cumulative = $m >= $vest ? $qty : (int) floor($qty * $m / $vest);
             $date = $from->add(new \DateInterval('P' . $m . 'M'))->format('Y-m-d');
-            $kind = $m === $cliff ? 'cliff' : ($m === $vest ? 'final' : 'mensuel');
+            $kind = $m === $cliff ? 'cliff' : ($m === $vest ? 'final' : 'monthly');
             $rows[] = ['date' => $date, 'cumulative' => $cumulative, 'tranche' => $cumulative - $prev, 'kind' => $kind];
             $prev = $cumulative;
         }
@@ -103,16 +103,16 @@ class OptionService
     public function exercise(int $grantId, int $quantity, string $date, string $reference = ''): int
     {
         if ($quantity <= 0) {
-            throw new \InvalidArgumentException('Quantité à exercer invalide.');
+            throw new \InvalidArgumentException('Invalid exercise quantity.');
         }
         $grant = Database::one('SELECT * FROM option_grants WHERE id = ?', [$grantId]);
         if (!$grant) {
-            throw new \InvalidArgumentException('Attribution introuvable.');
+            throw new \InvalidArgumentException('Grant not found.');
         }
         $available = $this->exercisableQty($grant);
         if ($quantity > $available) {
             throw new \InvalidArgumentException(
-                "Options insuffisantes : {$available} option(s) exerçables (vesting non écoulé ou déjà exercé)."
+                "Insufficient options: {$available} exercisable (vesting not elapsed or already exercised)."
             );
         }
 

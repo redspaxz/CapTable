@@ -24,7 +24,7 @@ class WaterfallController extends Controller
         }
         $result = $exitValue > 0 ? $this->ownership->waterfall($exitValue) : null;
         return $this->view('waterfall/index', [
-            'title' => 'Waterfall de liquidation',
+            'title' => 'Liquidation waterfall',
             'exitValue' => $exitValue,
             'result' => $result,
             'company' => \App\company(),

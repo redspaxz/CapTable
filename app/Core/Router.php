@@ -60,6 +60,6 @@ class Router
             }
         }
         http_response_code(404);
-        echo View::render('errors/404', ['title' => 'Page introuvable']);
+        echo View::render('errors/404', ['title' => 'Page not found']);
     }
 }

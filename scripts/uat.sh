@@ -56,9 +56,9 @@ has() { echo "$1" | grep -q -- "$2"; }
 echo "== T1 Authentification =="
 [ "$(code /login)" = 200 ] && ok "page de connexion accessible" || ko "page de connexion inaccessible"
 R=$(post /login /login /login --data-urlencode "email=admin@ttechgroup.cm" --data-urlencode "password=WRONG")
-has "$R" "Identifiants invalides" && ok "mot de passe erroné refusé avec message" || ko "mot de passe erroné accepté"
+has "$R" "Invalid credentials" && ok "mot de passe erroné refusé avec message" || ko "mot de passe erroné accepté"
 R=$(post /login /login / --data-urlencode "email=admin@ttechgroup.cm" --data-urlencode "password=password")
-has "$R" "Bienvenue" && has "$R" "Tableau de bord" && ok "connexion admin et tableau de bord" || ko "connexion admin"
+has "$R" "Welcome" && has "$R" "Dashboard" && ok "connexion admin et tableau de bord" || ko "connexion admin"
 
 # ---- T2 Actionnaires ---------------------------------------------------------
 echo "== T2 Actionnaires =="
@@ -78,10 +78,10 @@ has "$R" "Bassong-Essomba" && ok "modification d'un actionnaire" || ko "modifica
 
 # ---- T3 Catégories d'actions --------------------------------------------------
 echo "== T3 Catégories d'actions =="
-R=$(post /classes /classes /classes --data-urlencode "code=PREF" --data-urlencode "name=Actions preferentielles" \
+R=$(post /classes /classes /classes --data-urlencode "code=PREF" --data-urlencode "name=Preferred shares" \
     --data-urlencode "nominal_value=10000" --data-urlencode "shares_authorized=5000" \
     --data-urlencode "rights=Dividende majore, sans droit de vote" --data-urlencode "liquidation_multiplier=1.5" --data-urlencode "liquidation_priority=1" --data-urlencode "participating=0")
-has "$R" "PREF" && has "$R" "Actions preferentielles" && ok "création de la catégorie PREF" || ko "création catégorie PREF"
+has "$R" "PREF" && has "$R" "Preferred shares" && ok "création de la catégorie PREF" || ko "création catégorie PREF"
 
 # ---- T4 Émissions --------------------------------------------------------------
 echo "== T4 Émissions =="
@@ -97,7 +97,7 @@ R=$(post /issuances /issuances/new /issuances/new \
     --data-urlencode "share_class_id=$PREF_ID" --data-urlencode "shareholder_id=5" \
     --data-urlencode "quantity=4500" --data-urlencode "apport_type=cash" \
     --data-urlencode "issuance_date=2026-09-01")
-has "$R" "Quota dépassé" && ok "dépassement du quota autorisé bloqué (4 500 > 4 000 restants)" || ko "quota autorisé non vérifié"
+has "$R" "Quota exceeded" && ok "dépassement du quota autorisé bloqué (4 500 > 4 000 restants)" || ko "quota autorisé non vérifié"
 
 # ---- T5 Cessions -----------------------------------------------------------------
 echo "== T5 Cessions =="
@@ -111,7 +111,7 @@ R=$(post /transfers /transfers/new /transfers/new \
     --data-urlencode "share_class_id=$ORD_ID" --data-urlencode "seller_id=2" \
     --data-urlencode "buyer_id=1" --data-urlencode "quantity=3000" \
     --data-urlencode "transfer_date=2026-09-02")
-has "$R" "Titres insuffisants" && ok "cession au-delà des disponibilités bloquée (3 000 > 2 500 détenus)" || ko "disponibilités du cédant non vérifiées"
+has "$R" "Insufficient shares" && ok "cession au-delà des disponibilités bloquée (3 000 > 2 500 détenus)" || ko "disponibilités du cédant non vérifiées"
 
 # ---- T6 Cap table et registre -----------------------------------------------------
 echo "== T6 Cap table et registre =="
@@ -132,26 +132,26 @@ R=$(post /documents/certificates /documents/certificates/new /documents \
     --data-urlencode "shareholder_id=1" --data-urlencode "share_class_id=$ORD_ID" --data-urlencode "quantity=4500")
 has "$R" "CT-00001" && ok "certificat CT-00001 émis pour 4 500 actions" || ko "émission de certificat"
 R=$(get /documents/certificates/1)
-has "$R" "CERTIFICAT D.ACTIONS" && has "$R" "4 500" && ok "certificat imprimable avec mentions OHADA" || ko "certificat non conforme"
+has "$R" "SHARE CERTIFICATE" && has "$R" "4 500" && ok "certificat imprimable avec mentions OHADA" || ko "certificat non conforme"
 R=$(post /documents/certificates /documents/certificates/new /documents/certificates/new \
     --data-urlencode "shareholder_id=2" --data-urlencode "share_class_id=$ORD_ID" --data-urlencode "quantity=9999")
-has "$R" "Quantité invalide" && ok "certificat au-delà des titres détenus bloqué" || ko "garde-fou certificat inopérant"
+has "$R" "Invalid quantity" && ok "certificat au-delà des titres détenus bloqué" || ko "garde-fou certificat inopérant"
 R=$(get /documents/deeds/2)
-has "$R" "ACTE DE CESSION" && has "$R" "ACT-UAT-001" && ok "acte de cession UAT imprimable" || ko "acte de cession"
+has "$R" "TRANSFER DEED" && has "$R" "ACT-UAT-001" && ok "acte de cession UAT imprimable" || ko "acte de cession"
 R=$(post_raw /documents/minutes /documents/minutes/new \
     --data-urlencode "meeting_type=AGE" --data-urlencode "meeting_date=2026-09-03" \
     --data-urlencode "location=Siege social, Douala" \
     --data-urlencode "agenda=Approbation de la cession de 500 actions ORD" \
     --data-urlencode "resolutions=L assemblee approuve la cession a l unanimite.")
-has "$R" "ASSEMBL" && has "$R" "40,91" && ok "PV d'assemblée généré avec le tableau de présence exact" || ko "PV d'assemblée"
+has "$R" "MINUTES OF THE GENERAL" && has "$R" "40,91" && ok "PV d'assemblée généré avec le tableau de présence exact" || ko "PV d'assemblée"
 
 # ---- T8 Contrôle d'accès (rôle viewer) ----------------------------------------------
 echo "== T8 Contrôle d'accès (rôle viewer) =="
 curl -s -b "$JAR" -c "$JAR" -X POST "$URL/logout" --data-urlencode "_csrf=$(csrf /)" -o /dev/null
 R=$(post /login /login / --data-urlencode "email=viewer@ttechgroup.cm" --data-urlencode "password=password")
-has "$R" "Bienvenue" && ok "connexion viewer réussie" || ko "connexion viewer"
+has "$R" "Welcome" && ok "connexion viewer réussie" || ko "connexion viewer"
 R=$(get /shareholders)
-has "$R" "Nouvel actionnaire" && ko "le viewer voit les boutons d'écriture" || ok "viewer : boutons d'écriture masqués"
+has "$R" "New shareholder" && ko "le viewer voit les boutons d'écriture" || ok "viewer : boutons d'écriture masqués"
 C=$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' -X POST "$URL/shareholders" \
     --data-urlencode "_csrf=$(csrf /shareholders)" --data-urlencode "type=individual" \
     --data-urlencode "name=Intrus" --data-urlencode "id_number=1" --data-urlencode "id_type=CNI")
@@ -190,7 +190,7 @@ R=$(post /options /options/new /options \
     --data-urlencode "cliff_months=12" --data-urlencode "notes=UAT")
 has "$R" "1 000" && has "$R" "500" && ok "attribution 1 000 options créée, 500 acquises (12/24 mois)" || ko "attribution UAT"
 R=$(post /options/2/exercise /options/2 /options/2 --data-urlencode "quantity=999" --data-urlencode "exercise_date=2026-09-07")
-has "$R" "Options insuffisantes" && ok "exercice au-delà des options exerçables bloqué (999 > 500)" || ko "garde-fou exercice"
+has "$R" "Insufficient options" && ok "exercice au-delà des options exerçables bloqué (999 > 500)" || ko "garde-fou exercice"
 R=$(post /options/2/exercise /options/2 /options/2 --data-urlencode "quantity=500" --data-urlencode "exercise_date=2026-09-07")
 has "$R" "500" && ok "exercice de 500 options réalisé" || ko "exercice 500"
 R=$(get /issuances)
@@ -210,10 +210,10 @@ has "$R" "15 000 000" && has "$R" "57 857 142" && ok "waterfall : préférence P
 echo "== T12 Portail =="
 post /logout / -o /dev/null
 R=$(post /login /login /portal --data-urlencode "email=employee@ttechgroup.cm" --data-urlencode "password=password")
-has "$R" "Employ" && has "$R" "400" && has "$R" "2 000 000" && ok "portail employé : badge, options acquises (400) et valeur (2 000 000 XAF)" || ko "portail employé"
+has "$R" "Employee" && has "$R" "400" && has "$R" "2 000 000" && ok "portail employé : badge, options acquises (400) et valeur (2 000 000 XAF)" || ko "portail employé"
 post /logout / -o /dev/null
 R=$(post /login /login /portal --data-urlencode "email=admin@ttechgroup.cm" --data-urlencode "password=password")
-has "$R" "Fondateur" && has "$R" "4 500" && ok "portail fondateur : profil lié et titres (4 500)" || ko "portail fondateur"
+has "$R" "Founder" && has "$R" "4 500" && ok "portail fondateur : profil lié et titres (4 500)" || ko "portail fondateur"
 R=$(get "/captable/history?as_of=2024-01-01")
 has "$R" "10 000" && has "$R" "3 000" && ok "historique au 2024-01-01 : capital d'origine reconstitué (Marie 3 000)" || ko "historique capital"
 
@@ -222,13 +222,13 @@ echo "== T13 Restrictions de cession =="
 TOKC=$(get /classes | grep -o 'name="_csrf" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"$//')
 # AGR : clause d'agrément, sans lock-up actif (id 3) ; LOCK : inaliénable jusqu'en 2030 (id 4)
 curl -s -b "$JAR" -c "$JAR" -X POST "$URL/classes" \
-    --data-urlencode "code=AGR" --data-urlencode "name=Actions sous agrement" \
+    --data-urlencode "code=AGR" --data-urlencode "name=Shares under consent" \
     --data-urlencode "nominal_value=10000" --data-urlencode "shares_authorized=1000" \
     --data-urlencode "category=ordinary" --data-urlencode "voting_weight=1" \
     --data-urlencode "requires_approval=1" --data-urlencode "lockup_until=2026-01-01" \
     --data-urlencode "_csrf=$TOKC" -o /dev/null
 curl -s -b "$JAR" -c "$JAR" -X POST "$URL/classes" \
-    --data-urlencode "code=LOCK" --data-urlencode "name=Actions inalienables" \
+    --data-urlencode "code=LOCK" --data-urlencode "name=Non-transferable shares" \
     --data-urlencode "nominal_value=10000" --data-urlencode "shares_authorized=1000" \
     --data-urlencode "category=ordinary" --data-urlencode "voting_weight=1" \
     --data-urlencode "requires_approval=0" --data-urlencode "lockup_until=2030-01-01" \
@@ -241,33 +241,33 @@ R=$(post /transfers /transfers/new /transfers/new \
     --data-urlencode "share_class_id=4" --data-urlencode "seller_id=1" \
     --data-urlencode "buyer_id=3" --data-urlencode "quantity=10" \
     --data-urlencode "transfer_date=2026-09-07")
-has "$R" "Inali" && ok "lock-up actif : cession LOCK refusée jusqu'en 2030" || ko "lock-up non appliqué"
+has "$R" "Lock-up" && ok "lock-up actif : cession LOCK refusée jusqu'en 2030" || ko "lock-up non appliqué"
 R=$(post /transfers /transfers/new /transfers \
     --data-urlencode "share_class_id=3" --data-urlencode "seller_id=1" \
     --data-urlencode "buyer_id=3" --data-urlencode "quantity=10" \
     --data-urlencode "transfer_date=2026-09-07")
-has "$R" "En attente d" && ok "clause d'agrément : cession AGR en attente d'approbation" || ko "agrément non appliqué"
+has "$R" "pending approval" && ok "clause d'agrément : cession AGR en attente d'approbation" || ko "agrément non appliqué"
 TOKA=$(get /transfers | grep -o 'name="_csrf" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"$//')
 curl -s -b "$JAR" -c "$JAR" -X POST "$URL/transfers/3/approve" \
     --data-urlencode "approval_date=2026-09-07" --data-urlencode "notary_reference=NOT-UAT-1" \
     --data-urlencode "_csrf=$TOKA" -o /dev/null
 R=$(get /transfers)
-has "$R" "Approuv" && ok "approbation : mouvement inscrit au registre (opposable aux tiers)" || ko "approbation"
+has "$R" "Approved" && ok "approbation : mouvement inscrit au registre (opposable aux tiers)" || ko "approbation"
 R=$(get /register)
 has "$R" "NOT-UAT-1" && ok "registre : référence notariée archivée sur le mouvement" || ko "référence notaire absente"
 
 # ---- T14 Conformité : conventions réglementées, UBO, droits de vote -----------
 echo "== T14 Conformité =="
 R=$(get /compliance)
-has "$R" "art. 440" && has "$R" "commissaire aux comptes" && ok "conventions réglementées : parties ≥ 10 % identifiées avec alerte CAC" || ko "conventions réglementées"
+has "$R" "art. 440" && has "$R" "statutory auditor" && ok "conventions réglementées : parties ≥ 10 % identifiées avec alerte CAC" || ko "conventions réglementées"
 has "$R" "Edmund Alomepe" && ok "détections ≥ 10 % correctes" || ko "parties réglementées incorrectes"
 R=$(post /compliance/ubo /compliance/ubo/new /compliance \
     --data-urlencode "name=Edmund Alomepe" --data-urlencode "id_number=1122334455" \
     --data-urlencode "ownership_pct=39.13" --data-urlencode "shareholder_id=1" \
-    --data-urlencode "control_nature=Detention directe" --data-urlencode "declared_at=2026-09-07")
+    --data-urlencode "control_nature=Direct holding" --data-urlencode "declared_at=2026-09-07")
 has "$R" "Edmund Alomepe" && ok "bénéficiaire effectif déclaré (COBAC/DGI)" || ko "déclaration UBO"
 R=$(get "/meeting?kind=AGE")
-has "$R" "voix" && has "$R" "Minorit" && ok "moteur de vote : AGE avec quorum/majorité/minorité de blocage" || ko "moteur de vote"
+has "$R" "votes" && has "$R" "Blocking" && ok "moteur de vote : AGE avec quorum/majorité/minorité de blocage" || ko "moteur de vote"
 
 # ---- T15 Convertibles & double devise ------------------------------------------
 echo "== T15 Convertibles =="
@@ -277,7 +277,7 @@ R=$(post /convertibles /convertibles /convertibles \
     --data-urlencode "valuation_cap=750000000" --data-urlencode "issue_date=2025-06-30")
 has "$R" "UAT Fund" && ok "OCA enregistrée et modélisée" || ko "OCA"
 R=$(get /convertibles)
-has "$R" "pro-forma" && ok "cap table pro-forma de dilution généré" || ko "pro-forma"
+has "$R" "Pro-forma" && ok "cap table pro-forma de dilution généré" || ko "pro-forma"
 R=$(get /captable)
 has "$R" "EUR" && ok "double devise : équivalent EUR affiché (taux 655,957)" || ko "double devise"
 

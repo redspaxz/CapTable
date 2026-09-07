@@ -26,7 +26,7 @@ class OptionController extends Controller
     public function create(): string
     {
         return $this->view('options/form', [
-            'title' => 'Nouvelle attribution d\'options',
+            'title' => 'New option grant',
             'classes' => Database::all('SELECT * FROM share_classes ORDER BY code'),
             'shareholders' => Database::all('SELECT * FROM shareholders ORDER BY name'),
         ]);
@@ -49,7 +49,7 @@ class OptionController extends Controller
         $v->required('shareholder_id', 'share_class_id', 'quantity', 'granted_at')
           ->positive('shareholder_id', 'share_class_id', 'quantity', 'vest_months')->date('granted_at');
         if ($v->fails()) {
-            \App\flash('error', 'Bénéficiaire, catégorie, quantité et date sont obligatoires.');
+            \App\flash('error', 'Beneficiary, class, quantity and date are required.');
             redirect('/options/new');
         }
         try {
@@ -63,7 +63,7 @@ class OptionController extends Controller
                 $data['cliff_months'],
                 $data['notes']
             );
-            \App\flash('success', 'Attribution d\'options enregistrée.');
+            \App\flash('success', 'Option grant recorded.');
         } catch (\InvalidArgumentException $e) {
             \App\flash('error', $e->getMessage());
             redirect('/options/new');
@@ -86,7 +86,7 @@ class OptionController extends Controller
             redirect('/options');
         }
         return $this->view('options/show', [
-            'title' => 'Attribution #' . $id,
+            'title' => 'Grant #' . $id,
             'grant' => $grant,
             'vested' => $service->vestedQty($grant),
             'exercisable' => $service->exercisableQty($grant),
@@ -109,7 +109,7 @@ class OptionController extends Controller
         $date = Request::str('exercise_date', date('Y-m-d'));
         try {
             (new OptionService())->exercise($id, $quantity, $date, Request::str('reference'));
-            \App\flash('success', 'Exercice réalisé : actions émises et inscrites au registre des mouvements de titres.');
+            \App\flash('success', 'Exercise completed: shares issued and recorded in the movement register.');
         } catch (\InvalidArgumentException $e) {
             \App\flash('error', $e->getMessage());
         }

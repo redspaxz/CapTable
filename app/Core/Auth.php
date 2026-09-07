@@ -61,7 +61,7 @@ class Auth
         self::requireLogin();
         if (!in_array(self::role(), $roles, true)) {
             http_response_code(403);
-            echo View::render('errors/403', ['title' => 'Accès refusé']);
+            echo View::render('errors/403', ['title' => 'Access denied']);
             exit;
         }
     }

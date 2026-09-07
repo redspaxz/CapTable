@@ -17,7 +17,7 @@ class Validator
         foreach ($fields as $field) {
             $value = $this->data[$field] ?? '';
             if ($value === '' || $value === null) {
-                $this->errors[$field] = 'Ce champ est obligatoire.';
+                $this->errors[$field] = 'This field is required.';
             }
         }
         return $this;
@@ -28,7 +28,7 @@ class Validator
         foreach ($fields as $field) {
             $value = $this->data[$field] ?? null;
             if ($value !== null && $value !== '' && (!is_numeric($value) || (int) $value <= 0)) {
-                $this->errors[$field] = 'Doit être un nombre entier positif.';
+                $this->errors[$field] = 'Must be a positive whole number.';
             }
         }
         return $this;
@@ -39,7 +39,7 @@ class Validator
         foreach ($fields as $field) {
             $value = $this->data[$field] ?? '';
             if ($value !== '' && !preg_match('#^\d{4}-\d{2}-\d{2}$#', (string) $value)) {
-                $this->errors[$field] = 'Date invalide (AAAA-MM-JJ).';
+                $this->errors[$field] = 'Invalid date (YYYY-MM-DD).';
             }
         }
         return $this;

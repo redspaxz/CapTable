@@ -15,7 +15,7 @@ class TransferController extends Controller
     public function index(): string
     {
         return $this->view('transfers/index', [
-            'title' => 'Cessions de droits sociaux',
+            'title' => 'Share transfers',
             'transfers' => Database::all(
                 'SELECT t.*, seller.name AS seller_name, buyer.name AS buyer_name, c.code AS class_code
                  FROM share_transfers t
@@ -30,7 +30,7 @@ class TransferController extends Controller
     public function create(): string
     {
         return $this->view('transfers/form', [
-            'title' => 'Nouvelle cession',
+            'title' => 'New transfer',
             'classes' => Database::all('SELECT * FROM share_classes ORDER BY code'),
             'shareholders' => Database::all('SELECT * FROM shareholders ORDER BY name'),
         ]);
@@ -51,19 +51,19 @@ class TransferController extends Controller
         $v->required('share_class_id', 'seller_id', 'buyer_id', 'quantity', 'transfer_date')
           ->positive('share_class_id', 'seller_id', 'buyer_id', 'quantity')->date('transfer_date');
         if ($v->fails()) {
-            \App\flash('error', 'Tous les champs sont obligatoires.');
+            \App\flash('error', 'All fields are required.');
             redirect('/transfers/new');
         }
         $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$data['share_class_id']]);
         if (!$class) {
-            \App\flash('error', 'Catégorie d\'actions inconnue.');
+            \App\flash('error', 'Unknown share class.');
             redirect('/transfers/new');
         }
         $compliance = new \App\Modules\Compliance\ComplianceService();
         $reference = $data['deed_reference'] !== '' ? $data['deed_reference'] : 'ACT-' . date('Ymd') . '-' . random_int(100, 999);
         try {
             if ($compliance->isBlocked($class, $data['transfer_date'])) {
-                \App\flash('error', 'Cession refusée : ' . implode(' ', $compliance->transferRestrictions($class, $data['transfer_date'])));
+                \App\flash('error', 'Transfer refused: ' . implode(' ', $compliance->transferRestrictions($class, $data['transfer_date'])));
                 redirect('/transfers/new');
             }
             if ($compliance->needsApproval($class)) {
@@ -72,7 +72,7 @@ class TransferController extends Controller
                     $data['share_class_id'], $data['seller_id'], $data['buyer_id'],
                     $data['quantity'], $data['transfer_date'], $reference, $deadline
                 );
-                \App\flash('success', 'Cession enregistrée en attente d\'approbation (agrément / droit de préemption jusqu\'au ' . $deadline . ').');
+                \App\flash('success', 'Transfer recorded, pending approval (approval / pre-emption right until ' . $deadline . ').');
                 redirect('/transfers');
             }
             (new ShareService())->transfer(
@@ -83,7 +83,7 @@ class TransferController extends Controller
                 $data['transfer_date'],
                 $reference
             );
-            \App\flash('success', 'Cession enregistrée.');
+            \App\flash('success', 'Transfer recorded.');
             redirect('/transfers');
         } catch (\InvalidArgumentException $e) {
             \App\flash('error', $e->getMessage());
@@ -96,7 +96,7 @@ class TransferController extends Controller
         Csrf::verify();
         try {
             (new ShareService())->approveTransfer($id, Request::str('approval_date', date('Y-m-d')), Request::str('notary_reference'));
-            \App\flash('success', 'Cession approuvée : mouvement inscrit au registre.');
+            \App\flash('success', 'Transfer approved: movement recorded in the register.');
         } catch (\InvalidArgumentException $e) {
             \App\flash('error', $e->getMessage());
         }
@@ -107,7 +107,7 @@ class TransferController extends Controller
     {
         Csrf::verify();
         (new ShareService())->rejectTransfer($id);
-        \App\flash('success', 'Cession rejetée.');
+        \App\flash('success', 'Transfer rejected.');
         redirect('/transfers');
     }
 }

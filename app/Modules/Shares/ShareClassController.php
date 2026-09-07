@@ -20,7 +20,7 @@ class ShareClassController extends Controller
         foreach ($classes as &$class) {
             $class['outstanding'] = $service->outstanding((int) $class['id']);
         }
-        return $this->view('classes/index', ['title' => 'Catégories d\'actions', 'classes' => $classes]);
+        return $this->view('classes/index', ['title' => 'Share classes', 'classes' => $classes]);
     }
 
     public function store(): void
@@ -43,7 +43,7 @@ class ShareClassController extends Controller
         $v = new Validator($data);
         $v->required('code', 'name')->positive('nominal_value', 'shares_authorized')->date('lockup_until');
         if ($v->fails() || Database::one('SELECT id FROM share_classes WHERE code = ?', [$data['code']])) {
-            \App\flash('error', 'Code, libellé, valeur nominale et nombre autorisé sont requis (code unique).');
+            \App\flash('error', 'Code, label, par value and authorized count are required (code must be unique).');
             redirect('/classes');
         }
         Database::execute(
@@ -52,7 +52,7 @@ class ShareClassController extends Controller
              $data['liquidation_multiplier'], $data['liquidation_priority'], $data['participating'],
              $data['category'], $data['voting_weight'], $data['requires_approval'], $data['lockup_until']]
         );
-        \App\flash('success', 'Catégorie d\'actions créée.');
+        \App\flash('success', 'Share class created.');
         redirect('/classes');
     }
 }
