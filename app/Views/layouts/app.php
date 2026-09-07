@@ -35,6 +35,8 @@
           <li class="nav-item"><a class="nav-link" href="<?= url('/issuances') ?>"><i class="bi bi-plus-square me-1"></i>Émissions</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/transfers') ?>"><i class="bi bi-arrow-left-right me-1"></i>Cessions</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/register') ?>"><i class="bi bi-journal-text me-1"></i>Registre</a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= url('/compliance') ?>"><i class="bi bi-shield-check me-1"></i>Conformité</a></li>
+          <li class="nav-item"><a class="nav-link" href="<?= url('/convertibles') ?>"><i class="bi bi-arrow-repeat me-1"></i>Convertibles</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/documents') ?>"><i class="bi bi-file-earmark-text me-1"></i>Documents</a></li>
         </ul>
         <div class="d-flex align-items-lg-center flex-column flex-lg-row gap-2">

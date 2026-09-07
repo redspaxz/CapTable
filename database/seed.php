@@ -58,8 +58,8 @@ Database::execute(
 // founders so demo ids stay stable: 1 Edmund, 2 Marie, 3 Holding, 4 Paul.
 
 Database::execute(
-    'INSERT INTO settings (company_name, legal_form, rccm, niu, head_office, fmv_per_share) VALUES (?,?,?,?,?,?)',
-    ['T&Tech Consulting Group', 'SA', 'RCCM/DLA/2020/B/1234', 'M092511234567X', 'Douala, Cameroun', 10000]
+    'INSERT INTO settings (company_name, legal_form, rccm, niu, head_office, fmv_per_share, secondary_currency, fx_rate, option_tax_rate) VALUES (?,?,?,?,?,?,?,?,?)',
+    ['T&Tech Consulting Group', 'SA', 'RCCM/DLA/2020/B/1234', 'M092511234567X', 'Douala, Cameroun', 10000, 'EUR', 655.957, 0.30]
 );
 
 // Share class: 10 000 XAF nominal, 100 000 authorized
@@ -116,6 +116,16 @@ $service->transfer($classId, $marie, $holding, 500, '2024-06-20', 'ACT-20240620-
 (new \App\Modules\Options\OptionService())->grant(
     $employeeId, $classId, 600, 5000, '2024-01-01', 48, 12,
     'Plan d\'intéressement — démonstration'
+);
+
+// v3 demo: DFI convertible note + auditor (CAC) read-only account
+Database::execute(
+    'INSERT INTO convertibles (type, holder, principal_amount, currency, discount_pct, valuation_cap, issue_date, notes) VALUES (?,?,?,?,?,?,?,?)',
+    ['OCA', 'Atlantique Ventures Fund', 50000000, 'XAF', 20.0, 750000000, '2025-06-30', 'Obligation convertible — tour d\'amorçage']
+);
+Database::execute(
+    'INSERT INTO users (name, email, password_hash, role, stakeholder_role) VALUES (?,?,?,?,?)',
+    ['Commissaire aux Comptes', 'auditor@ttechgroup.cm', password_hash('password', PASSWORD_DEFAULT), 'auditor', 'board']
 );
 
 echo "Seed OK — admin@ttechgroup.cm / password\n";

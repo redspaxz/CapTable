@@ -35,17 +35,22 @@ class ShareClassController extends Controller
             'liquidation_multiplier' => max(0.0, (float) Request::str('liquidation_multiplier', '1')),
             'liquidation_priority' => max(1, Request::int('liquidation_priority', 100)),
             'participating' => Request::str('participating', '1') === '1' ? 1 : 0,
+            'category' => in_array(Request::str('category'), ['ordinary', 'preference', 'adpsdv'], true) ? Request::str('category') : 'ordinary',
+            'voting_weight' => in_array(Request::int('voting_weight', 1), [0, 1, 2], true) ? Request::int('voting_weight', 1) : 1,
+            'requires_approval' => Request::str('requires_approval', '0') === '1' ? 1 : 0,
+            'lockup_until' => Request::str('lockup_until') ?: null,
         ];
         $v = new Validator($data);
-        $v->required('code', 'name')->positive('nominal_value', 'shares_authorized');
+        $v->required('code', 'name')->positive('nominal_value', 'shares_authorized')->date('lockup_until');
         if ($v->fails() || Database::one('SELECT id FROM share_classes WHERE code = ?', [$data['code']])) {
             \App\flash('error', 'Code, libellé, valeur nominale et nombre autorisé sont requis (code unique).');
             redirect('/classes');
         }
         Database::execute(
-            'INSERT INTO share_classes (code, name, nominal_value, shares_authorized, rights, liquidation_multiplier, liquidation_priority, participating) VALUES (?,?,?,?,?,?,?,?)',
+            'INSERT INTO share_classes (code, name, nominal_value, shares_authorized, rights, liquidation_multiplier, liquidation_priority, participating, category, voting_weight, requires_approval, lockup_until) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
             [$data['code'], $data['name'], $data['nominal_value'], $data['shares_authorized'], $data['rights'],
-             $data['liquidation_multiplier'], $data['liquidation_priority'], $data['participating']]
+             $data['liquidation_multiplier'], $data['liquidation_priority'], $data['participating'],
+             $data['category'], $data['voting_weight'], $data['requires_approval'], $data['lockup_until']]
         );
         \App\flash('success', 'Catégorie d\'actions créée.');
         redirect('/classes');

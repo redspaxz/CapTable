@@ -66,6 +66,80 @@ class ShareService
         });
     }
 
+    /**
+     * Record a transfer request pending approval (clause d'agrément /
+     * SARL consent). No register movement is written until approval.
+     */
+    public function requestTransfer(
+        int $classId,
+        int $sellerId,
+        int $buyerId,
+        int $quantity,
+        string $date,
+        string $deedReference,
+        string $preemptionDeadline
+    ): int {
+        if ($sellerId === $buyerId) {
+            throw new \InvalidArgumentException('Le cédant et le cessionnaire ne peuvent pas être identiques.');
+        }
+        $available = $this->ownership->holding($sellerId, $classId);
+        if ($available < $quantity) {
+            throw new \InvalidArgumentException(
+                "Titres insuffisants : le cédant détient {$available} titre(s) dans cette classe."
+            );
+        }
+        Database::execute(
+            'INSERT INTO share_transfers (share_class_id, seller_id, buyer_id, quantity, transfer_date, deed_reference, status, preemption_deadline)
+             VALUES (?,?,?,?,?,?,?,?)',
+            [$classId, $sellerId, $buyerId, $quantity, $date, $deedReference, 'pending', $preemptionDeadline]
+        );
+        return Database::lastId();
+    }
+
+    /**
+     * Approve a pending transfer: writes the register movement and
+     * marks the deed executed (opposable aux tiers).
+     */
+    public function approveTransfer(int $transferId, string $approvalDate, string $notaryReference = ''): void
+    {
+        Database::transaction(function () use ($transferId, $approvalDate, $notaryReference) {
+            $transfer = Database::one('SELECT * FROM share_transfers WHERE id = ?', [$transferId]);
+            if (!$transfer || $transfer['status'] !== 'pending') {
+                throw new \InvalidArgumentException('Cession introuvable ou déjà traitée.');
+            }
+            $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$transfer['share_class_id']]);
+            $compliance = new \App\Modules\Compliance\ComplianceService();
+            if ($compliance->isBlocked($class, $approvalDate)) {
+                throw new \InvalidArgumentException('Cession toujours sous inaliénabilité (lock-up).');
+            }
+            $available = $this->ownership->holding((int) $transfer['seller_id'], (int) $transfer['share_class_id']);
+            if ($available < (int) $transfer['quantity']) {
+                throw new \InvalidArgumentException("Titres insuffisants : {$available} disponible(s).");
+            }
+            Database::execute(
+                'INSERT INTO share_movements (movement_type, share_class_id, shareholder_id, counterparty_id, quantity, movement_date, reference, notary_reference, created_by)
+                 VALUES ("transfer_out",?,?,?,?,?,?,?,?)',
+                [$transfer['share_class_id'], $transfer['seller_id'], $transfer['buyer_id'],
+                 $transfer['quantity'], $approvalDate, $transfer['deed_reference'],
+                 $notaryReference !== '' ? $notaryReference : null, \App\Core\Auth::user()['id'] ?? null]
+            );
+            $this->adjustHolding((int) $transfer['seller_id'], (int) $transfer['share_class_id'], -(int) $transfer['quantity']);
+            $this->adjustHolding((int) $transfer['buyer_id'], (int) $transfer['share_class_id'], (int) $transfer['quantity']);
+            Database::execute(
+                'UPDATE share_transfers SET status = "approved", approval_date = ?, notary_reference = ? WHERE id = ?',
+                [$approvalDate, $notaryReference !== '' ? $notaryReference : null, $transferId]
+            );
+        });
+    }
+
+    public function rejectTransfer(int $transferId): void
+    {
+        Database::execute(
+            'UPDATE share_transfers SET status = "rejected" WHERE id = ? AND status = "pending"',
+            [$transferId]
+        );
+    }
+
     /** Issue a numbered certificate and record it. */
     public function issueCertificate(int $shareholderId, int $classId, int $quantity, string $date): array
     {

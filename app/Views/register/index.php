@@ -7,7 +7,7 @@
   <button class="btn btn-outline-dark" onclick="window.print()">🖨 Imprimer</button>
 </div>
 <table class="table table-sm table-striped bg-white shadow-sm" data-enhance="table">
-  <thead class="table-dark"><tr><th>#</th><th>Date</th><th>Type</th><th>Titulaire</th><th>Contrepartie</th><th>Catégorie</th><th class="text-end">Titres</th><th>Référence</th></tr></thead>
+  <thead class="table-dark"><tr><th>#</th><th>Date</th><th>Type</th><th>Titulaire</th><th>Contrepartie</th><th>Catégorie</th><th class="text-end">Titres</th><th>Référence</th><th>Notaire / RCCM</th></tr></thead>
   <tbody>
     <?php foreach ($movements as $m):
       $labels = ['issuance' => 'Émission', 'transfer_out' => 'Cession — sortie', 'transfer_in' => 'Cession — entrée']; ?>
@@ -20,9 +20,20 @@
       <td><?= e($m['class_code']) ?></td>
       <td class="text-end"><?= shares((int) $m['quantity']) ?></td>
       <td><?= e($m['reference']) ?></td>
+      <td class="small">
+        <?php if (!empty($m['notary_reference'])): ?>
+          <span class="badge text-bg-dark">Notaire <?= e($m['notary_reference']) ?></span>
+        <?php endif; ?>
+        <?php if (!empty($m['rccm_reference'])): ?>
+          <span class="badge text-bg-info">RCCM <?= e($m['rccm_reference']) ?></span>
+        <?php endif; ?>
+        <?php if (empty($m['notary_reference']) && empty($m['rccm_reference'])): ?>
+          <span class="text-muted">—</span>
+        <?php endif; ?>
+      </td>
     </tr>
     <?php endforeach; ?>
-    <?php if ($movements === []): ?><tr><td colspan="8" class="text-center text-muted py-4">Registre vide.</td></tr><?php endif; ?>
+    <?php if ($movements === []): ?><tr><td colspan="9" class="text-center text-muted py-4">Registre vide.</td></tr><?php endif; ?>
   </tbody>
 </table>
 <?php if (($pages ?? 1) > 1): ?>

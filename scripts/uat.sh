@@ -211,8 +211,72 @@ has "$R" "Fondateur" && has "$R" "4 500" && ok "portail fondateur : profil lié 
 R=$(get "/captable/history?as_of=2024-01-01")
 has "$R" "10 000" && has "$R" "3 000" && ok "historique au 2024-01-01 : capital d'origine reconstitué (Marie 3 000)" || ko "historique capital"
 
-# ---- T13 Cohérence de la projection du registre ------------------------------------------
-echo "== T13 Cohérence de la projection =="
+# ---- T13 Agrément / préemption / lock-up -------------------------------------
+echo "== T13 Restrictions de cession =="
+TOKC=$(get /classes | grep -o 'name="_csrf" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"$//')
+# AGR : clause d'agrément, sans lock-up actif (id 3) ; LOCK : inaliénable jusqu'en 2030 (id 4)
+curl -s -b "$JAR" -c "$JAR" -X POST "$URL/classes" \
+    --data-urlencode "code=AGR" --data-urlencode "name=Actions sous agrement" \
+    --data-urlencode "nominal_value=10000" --data-urlencode "shares_authorized=1000" \
+    --data-urlencode "category=ordinary" --data-urlencode "voting_weight=1" \
+    --data-urlencode "requires_approval=1" --data-urlencode "lockup_until=2026-01-01" \
+    --data-urlencode "_csrf=$TOKC" -o /dev/null
+curl -s -b "$JAR" -c "$JAR" -X POST "$URL/classes" \
+    --data-urlencode "code=LOCK" --data-urlencode "name=Actions inalienables" \
+    --data-urlencode "nominal_value=10000" --data-urlencode "shares_authorized=1000" \
+    --data-urlencode "category=ordinary" --data-urlencode "voting_weight=1" \
+    --data-urlencode "requires_approval=0" --data-urlencode "lockup_until=2030-01-01" \
+    --data-urlencode "_csrf=$TOKC" -o /dev/null
+R=$(post /issuances /issuances/new /issuances \
+    --data-urlencode "share_class_id=3" --data-urlencode "shareholder_id=1" \
+    --data-urlencode "quantity=100" --data-urlencode "issuance_date=2026-01-01")
+has "$R" "100" && ok "catégorie AGR (agrément) créée et émise" || ko "catégorie AGR"
+R=$(post /transfers /transfers/new /transfers/new \
+    --data-urlencode "share_class_id=4" --data-urlencode "seller_id=1" \
+    --data-urlencode "buyer_id=3" --data-urlencode "quantity=10" \
+    --data-urlencode "transfer_date=2026-09-07")
+has "$R" "Inali" && ok "lock-up actif : cession LOCK refusée jusqu'en 2030" || ko "lock-up non appliqué"
+R=$(post /transfers /transfers/new /transfers \
+    --data-urlencode "share_class_id=3" --data-urlencode "seller_id=1" \
+    --data-urlencode "buyer_id=3" --data-urlencode "quantity=10" \
+    --data-urlencode "transfer_date=2026-09-07")
+has "$R" "En attente d" && ok "clause d'agrément : cession AGR en attente d'approbation" || ko "agrément non appliqué"
+TOKA=$(get /transfers | grep -o 'name="_csrf" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"$//')
+curl -s -b "$JAR" -c "$JAR" -X POST "$URL/transfers/3/approve" \
+    --data-urlencode "approval_date=2026-09-07" --data-urlencode "notary_reference=NOT-UAT-1" \
+    --data-urlencode "_csrf=$TOKA" -o /dev/null
+R=$(get /transfers)
+has "$R" "Approuv" && ok "approbation : mouvement inscrit au registre (opposable aux tiers)" || ko "approbation"
+R=$(get /register)
+has "$R" "NOT-UAT-1" && ok "registre : référence notariée archivée sur le mouvement" || ko "référence notaire absente"
+
+# ---- T14 Conformité : conventions réglementées, UBO, droits de vote -----------
+echo "== T14 Conformité =="
+R=$(get /compliance)
+has "$R" "art. 440" && has "$R" "commissaire aux comptes" && ok "conventions réglementées : parties ≥ 10 % identifiées avec alerte CAC" || ko "conventions réglementées"
+has "$R" "Edmund Alomepe" && ok "détections ≥ 10 % correctes" || ko "parties réglementées incorrectes"
+R=$(post /compliance/ubo /compliance/ubo/new /compliance \
+    --data-urlencode "name=Edmund Alomepe" --data-urlencode "id_number=1122334455" \
+    --data-urlencode "ownership_pct=39.13" --data-urlencode "shareholder_id=1" \
+    --data-urlencode "control_nature=Detention directe" --data-urlencode "declared_at=2026-09-07")
+has "$R" "Edmund Alomepe" && ok "bénéficiaire effectif déclaré (COBAC/DGI)" || ko "déclaration UBO"
+R=$(get "/meeting?kind=AGE")
+has "$R" "voix" && has "$R" "Minorit" && ok "moteur de vote : AGE avec quorum/majorité/minorité de blocage" || ko "moteur de vote"
+
+# ---- T15 Convertibles & double devise ------------------------------------------
+echo "== T15 Convertibles =="
+R=$(post /convertibles /convertibles /convertibles \
+    --data-urlencode "type=OCA" --data-urlencode "holder=UAT Fund" \
+    --data-urlencode "principal_amount=50000000" --data-urlencode "discount_pct=20" \
+    --data-urlencode "valuation_cap=750000000" --data-urlencode "issue_date=2025-06-30")
+has "$R" "UAT Fund" && ok "OCA enregistrée et modélisée" || ko "OCA"
+R=$(get /convertibles)
+has "$R" "pro-forma" && ok "cap table pro-forma de dilution généré" || ko "pro-forma"
+R=$(get /captable)
+has "$R" "EUR" && ok "double devise : équivalent EUR affiché (taux 655,957)" || ko "double devise"
+
+# ---- T16 Cohérence de la projection du registre ------------------------------------------
+echo "== T16 Cohérence de la projection =="
 ( cd "$BASE" && DB_DRIVER=sqlite php scripts/check_holdings.php ) >/dev/null 2>&1 \
     && ok "share_holdings identique au repli du registre" || ko "projection divergente du registre"
 

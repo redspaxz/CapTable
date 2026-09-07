@@ -8,14 +8,17 @@ Architecture : **monolithe modulaire** en PHP pur (MVC maison), MySQL/MariaDB, v
 
 | Module | Fonction |
 |---|---|
-| Security | Connexion, rôles (admin / finance / viewer), CSRF, anti-force brute |
+| Security | Connexion, rôles (admin / finance / viewer / **auditeur CAC**), CSRF, anti-force brute |
 | Dashboard | Indicateurs : capital social, titres, actionnaires, mouvements |
 | Shareholders | Actionnaires (personnes physiques et morales, CNI/RC) |
-| Shares | Catégories d'actions (avec préférence de liquidation), émissions (apport en numéraire/nature), cessions |
-| CapTable | Répartition du capital, %, graphique, export CSV, registre des mouvements de titres (art. 716 AUSCGIE), **historique reconstitué à toute date**, **waterfall de liquidation** |
-| Options (ESOP) | Attributions d'options avec **vesting mensuel + cliff**, échéancier, **exercice automatisé** (émission + registre en une transaction) |
-| Portals | **Portail des parties prenantes** : tableau de bord dédié (fondateur, investisseur, administrateur, employé) — titres détenus, statut des options, actions exercées, valeur acquise |
-| Documents | Certificats d'actions, actes de cession, PV d'assemblée générale |
+| Shares | Catégories OHADA (ordinaire / préférence / **ADPSDV sans droit de vote**, poids de vote ×0/×1/×2), préférence de liquidation, **clauses d'agrément et d'inaliénabilité (10 ans max, art. 2-1)**, émissions, cessions avec **workflow d'approbation et préemption 30 j** |
+| CapTable | Répartition du capital, %, graphique, export CSV, registre des mouvements (art. 716) **avec références notariées/RCCM**, historique à toute date, waterfall de liquidation, **double devise XAF/EUR/USD** |
+| Options (ESOP) | Vesting temps réel + **jalons**, exercice automatisé (émission + registre), **note d'impact fiscal CGI indicative** |
+| Convertibles | **OCA / BSA / SAFE** : modélisation de conversion (cap + remise) et cap table pro-forma dilué |
+| Compliance | **Conventions réglementées ≥ 10 % (art. 440, alerte CAC)**, **registre des bénéficiaires effectifs (COBAC/DGI, seuil 25 %)**, cessions en attente d'agrément |
+| Governance | **Moteur de droits de vote et quorum/majorité AGE/AGO/AGC**, modèles de résolutions (augmentation de capital, rachat, conversion, agrément) |
+| Portals | Portail des parties prenantes (fondateur, investisseur, administrateur, employé, **auditeur**) : titres, options, valeur acquise |
+| Documents | Certificats d'actions, actes de cession, PV d'assemblée |
 
 ## Structure
 
@@ -53,9 +56,9 @@ php database/seed.php
 php -S localhost:8080 -t public public/router.php
 ```
 
-Comptes de démonstration (mot de passe `password`) : `admin@ttechgroup.cm` (admin/fondateur), `finance@ttechgroup.cm` (finance), `viewer@ttechgroup.cm` (lecture seule), `employee@ttechgroup.cm` (employé, portail avec options).
+Comptes de démonstration (mot de passe `password`) : `admin@ttechgroup.cm` (admin/fondateur), `finance@ttechgroup.cm` (finance), `viewer@ttechgroup.cm` (lecture seule), `employee@ttechgroup.cm` (employé, portail avec options), `auditor@ttechgroup.cm` (commissaire aux comptes, lecture seule étendue).
 
-> **Mise à jour d'une installation v1** : ré-importer `database/schema.<driver>.sql` (les `CREATE TABLE IF NOT EXISTS` sont ignorés, les `ALTER` ajoutent les colonnes et tables v2 : options, préférences de liquidation, liens portail).
+> **Mise à jour d'une installation v1/v2** : ré-importer `database/schema.<driver>.sql` (les `CREATE TABLE IF NOT EXISTS` sont ignorés, les `ALTER` ajoutent les colonnes et tables suivantes : options, préférences, workflow de cession, bénéficiaires effectifs, convertibles, double devise).
 
 ## Recette UAT
 
@@ -79,8 +82,11 @@ bash scripts/uat.sh          # port personnalisé : UAT_PORT=9090 bash scripts/u
 | T10 Options & vesting | attribution, acquises au cliff, exercice automatisé (émission EX- + registre), garde-fou d'exercice |
 | T11 Waterfall | préférence de liquidation puis reliquat au prorata — montants exacts |
 | T12 Portails & historique | portail employé (options, valeur acquise), portail fondateur (titres), capital reconstitué à date |
+| T13 Restrictions | lock-up refusé, clause d'agrément → cession en attente → approbation → registre + référence notariée |
+| T14 Conformité | conventions réglementées ≥ 10 % + alerte CAC, déclaration UBO, moteur de vote AGE |
+| T15 Convertibles & devise | OCA modélisée, pro-forma dilué, équivalent EUR (taux 655,957) |
 
-**Dernière exécution : 2026-09-07 — 41/41 réussis** (PHP 8.2, SQLite). Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
+**Dernière exécution : 2026-09-07 — 53/53 réussis** (PHP 8.2, SQLite). Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
 
 ## Déploiement cPanel (hébergement mutualisé)
 

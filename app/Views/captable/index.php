@@ -29,6 +29,9 @@
       </tbody>
       <tfoot class="table-light fw-bold">
         <tr><td colspan="2">Total</td><td class="text-end"><?= shares($totalShares) ?></td><td class="text-end"><?= money($totalCapital) ?></td><td class="text-end">100 %</td></tr>
+        <?php if (!empty($company['secondary_currency']) && (float) $company['fx_rate'] > 0): ?>
+        <tr class="small"><td colspan="4" class="text-end text-muted">≈ <?= number_format($totalCapital / (float) $company['fx_rate'], 0, ',', ' ') ?> <?= e($company['secondary_currency']) ?></td><td></td></tr>
+        <?php endif; ?>
       </tfoot>
     </table>
 

@@ -36,6 +36,23 @@
           <div class="col-4"><label class="form-label">Priorité</label><input name="liquidation_priority" type="number" min="1" value="100" class="form-control"></div>
           <div class="col-4"><label class="form-label">Participante</label>
             <select name="participating" class="form-select"><option value="1">Oui</option><option value="0">Non</option></select></div>
+          <div class="col-6"><label class="form-label">Catégorie OHADA</label>
+            <select name="category" class="form-select">
+              <option value="ordinary">Ordinaire</option>
+              <option value="preference">Préférence</option>
+              <option value="adpsdv">Dividende prioritaire sans droit de vote</option>
+            </select></div>
+          <div class="col-6"><label class="form-label">Poids de vote</label>
+            <select name="voting_weight" class="form-select">
+              <option value="1">×1 (ordinaire)</option>
+              <option value="2">×2 (double droit de vote)</option>
+              <option value="0">×0 (sans droit de vote)</option>
+            </select></div>
+          <div class="col-6"><label class="form-label">Clause d'agrément</label>
+            <select name="requires_approval" class="form-select"><option value="0">Non</option><option value="1">Oui</option></select></div>
+          <div class="col-6"><label class="form-label">Inaliénabilité jusqu'au</label>
+            <input name="lockup_until" type="date" class="form-control">
+            <div class="form-text">10 ans maximum (OHADA art. 2-1)</div></div>
         </div>
         <div class="mb-3"><label class="form-label">Droits attachés</label><textarea name="rights" class="form-control" rows="2"></textarea></div>
         <button class="btn btn-primary w-100">Créer</button>

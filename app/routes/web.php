@@ -4,7 +4,10 @@
 
 use App\Core\Auth;
 use App\Modules\CapTable\CapTableController;
+use App\Modules\CapTable\ConvertibleController;
+use App\Modules\CapTable\MeetingController;
 use App\Modules\CapTable\WaterfallController;
+use App\Modules\Compliance\ComplianceController;
 use App\Modules\Dashboard\DashboardController;
 use App\Modules\Documents\DocumentController;
 use App\Modules\Options\OptionController;
@@ -17,7 +20,7 @@ use App\Modules\Shareholders\ShareholderController;
 
 $auth = [Auth::class, 'requireLogin'];
 $admin = fn() => Auth::requireRole('admin', 'finance');
-$view = fn() => Auth::requireRole('admin', 'finance', 'viewer');
+$view = fn() => Auth::requireRole('admin', 'finance', 'viewer', 'auditor');
 
 // Diagnostics: PHP version, detected base path, DB connectivity.
 // Unauthenticated on purpose (shared-hosting debugging) but never leaks
@@ -66,10 +69,12 @@ $router->get('/issuances', [IssuanceController::class, 'index'], [$view]);
 $router->get('/issuances/new', [IssuanceController::class, 'create'], [$admin]);
 $router->post('/issuances', [IssuanceController::class, 'store'], [$admin]);
 
-// Transfers
+// Transfers (with agrément / pre-emption workflow)
 $router->get('/transfers', [TransferController::class, 'index'], [$view]);
 $router->get('/transfers/new', [TransferController::class, 'create'], [$admin]);
 $router->post('/transfers', [TransferController::class, 'store'], [$admin]);
+$router->post('/transfers/{id}/approve', [TransferController::class, 'approve'], [$admin]);
+$router->post('/transfers/{id}/reject', [TransferController::class, 'reject'], [$admin]);
 
 // Cap table & register
 $router->get('/captable', [CapTableController::class, 'index'], [$view]);
@@ -88,6 +93,18 @@ $router->post('/options/{id}/exercise', [OptionController::class, 'exercise'], [
 
 // Stakeholder portal
 $router->get('/portal', [PortalController::class, 'index'], [$auth]);
+
+// Compliance (OHADA / COBAC / DGI)
+$router->get('/compliance', [ComplianceController::class, 'index'], [$view]);
+$router->get('/compliance/ubo/new', [ComplianceController::class, 'uboForm'], [$admin]);
+$router->post('/compliance/ubo', [ComplianceController::class, 'storeUbo'], [$admin]);
+
+// Convertibles (OCA / BSA / SAFE)
+$router->get('/convertibles', [ConvertibleController::class, 'index'], [$view]);
+$router->post('/convertibles', [ConvertibleController::class, 'store'], [$admin]);
+
+// General meeting & voting engine
+$router->get('/meeting', [MeetingController::class, 'index'], [$view]);
 
 // Documents
 $router->get('/documents', [DocumentController::class, 'index'], [$view]);

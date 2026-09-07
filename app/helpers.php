@@ -51,7 +51,8 @@ function company(): array
     static $company = null;
     if ($company === null) {
         $company = \App\Core\Database::one(
-            'SELECT company_name AS name, legal_form, rccm, niu, head_office, currency, fmv_per_share
+            'SELECT company_name AS name, legal_form, rccm, niu, head_office, currency,
+                    fmv_per_share, secondary_currency, fx_rate, option_tax_rate
              FROM settings ORDER BY id LIMIT 1'
         ) ?? [];
     }

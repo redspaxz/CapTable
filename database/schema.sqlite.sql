@@ -155,3 +155,53 @@ CREATE TABLE IF NOT EXISTS option_exercises (
     created_by INTEGER,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+-- v3: OHADA compliance, governance, convertibles, UBO
+ALTER TABLE settings ADD COLUMN secondary_currency TEXT;
+ALTER TABLE settings ADD COLUMN fx_rate REAL NOT NULL DEFAULT 1.0;      -- XAF per 1 unit of secondary currency
+ALTER TABLE settings ADD COLUMN option_tax_rate REAL NOT NULL DEFAULT 0.30;
+
+ALTER TABLE share_classes ADD COLUMN category TEXT NOT NULL DEFAULT 'ordinary';  -- ordinary|preference|adpsdv
+ALTER TABLE share_classes ADD COLUMN voting_weight INTEGER NOT NULL DEFAULT 1;   -- 0 = sans droit de vote, 2 = double vote
+ALTER TABLE share_classes ADD COLUMN requires_approval INTEGER NOT NULL DEFAULT 0; -- clause d'agrement
+ALTER TABLE share_classes ADD COLUMN lockup_until TEXT;
+
+ALTER TABLE share_movements ADD COLUMN rccm_reference TEXT;
+ALTER TABLE share_movements ADD COLUMN rccm_filed_at TEXT;
+ALTER TABLE share_movements ADD COLUMN notary_reference TEXT;
+
+ALTER TABLE share_transfers ADD COLUMN status TEXT NOT NULL DEFAULT 'executed'; -- pending|approved|rejected
+ALTER TABLE share_transfers ADD COLUMN approval_date TEXT;
+ALTER TABLE share_transfers ADD COLUMN preemption_deadline TEXT;
+
+ALTER TABLE option_grants ADD COLUMN vesting_type TEXT NOT NULL DEFAULT 'time'; -- time|milestone
+ALTER TABLE option_grants ADD COLUMN milestone_label TEXT;
+ALTER TABLE option_grants ADD COLUMN milestone_achieved_at TEXT;
+
+CREATE TABLE IF NOT EXISTS beneficial_owners (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    id_number TEXT,
+    nationality TEXT DEFAULT 'Camerounaise',
+    ownership_pct REAL NOT NULL DEFAULT 0,
+    control_nature TEXT,
+    shareholder_id INTEGER REFERENCES shareholders(id),
+    declared_at TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS convertibles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL,                    -- OCA | BSA | SAFE
+    holder TEXT NOT NULL,
+    principal_amount INTEGER NOT NULL,     -- in XAF equivalent
+    currency TEXT NOT NULL DEFAULT 'XAF',
+    discount_pct REAL NOT NULL DEFAULT 0,
+    valuation_cap INTEGER,
+    issue_date TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'outstanding',
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+ALTER TABLE share_transfers ADD COLUMN notary_reference TEXT;

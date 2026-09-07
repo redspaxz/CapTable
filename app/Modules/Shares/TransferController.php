@@ -54,14 +54,34 @@ class TransferController extends Controller
             \App\flash('error', 'Tous les champs sont obligatoires.');
             redirect('/transfers/new');
         }
+        $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$data['share_class_id']]);
+        if (!$class) {
+            \App\flash('error', 'Catégorie d\'actions inconnue.');
+            redirect('/transfers/new');
+        }
+        $compliance = new \App\Modules\Compliance\ComplianceService();
+        $reference = $data['deed_reference'] !== '' ? $data['deed_reference'] : 'ACT-' . date('Ymd') . '-' . random_int(100, 999);
         try {
+            if ($compliance->isBlocked($class, $data['transfer_date'])) {
+                \App\flash('error', 'Cession refusée : ' . implode(' ', $compliance->transferRestrictions($class, $data['transfer_date'])));
+                redirect('/transfers/new');
+            }
+            if ($compliance->needsApproval($class)) {
+                $deadline = date('Y-m-d', strtotime($data['transfer_date'] . ' +30 days'));
+                (new ShareService())->requestTransfer(
+                    $data['share_class_id'], $data['seller_id'], $data['buyer_id'],
+                    $data['quantity'], $data['transfer_date'], $reference, $deadline
+                );
+                \App\flash('success', 'Cession enregistrée en attente d\'approbation (agrément / droit de préemption jusqu\'au ' . $deadline . ').');
+                redirect('/transfers');
+            }
             (new ShareService())->transfer(
                 $data['share_class_id'],
                 $data['seller_id'],
                 $data['buyer_id'],
                 $data['quantity'],
                 $data['transfer_date'],
-                $data['deed_reference'] !== '' ? $data['deed_reference'] : 'ACT-' . date('Ymd') . '-' . random_int(100, 999)
+                $reference
             );
             \App\flash('success', 'Cession enregistrée.');
             redirect('/transfers');
@@ -69,5 +89,25 @@ class TransferController extends Controller
             \App\flash('error', $e->getMessage());
             redirect('/transfers/new');
         }
+    }
+
+    public function approve(int $id): void
+    {
+        Csrf::verify();
+        try {
+            (new ShareService())->approveTransfer($id, Request::str('approval_date', date('Y-m-d')), Request::str('notary_reference'));
+            \App\flash('success', 'Cession approuvée : mouvement inscrit au registre.');
+        } catch (\InvalidArgumentException $e) {
+            \App\flash('error', $e->getMessage());
+        }
+        redirect('/transfers');
+    }
+
+    public function reject(int $id): void
+    {
+        Csrf::verify();
+        (new ShareService())->rejectTransfer($id);
+        \App\flash('success', 'Cession rejetée.');
+        redirect('/transfers');
     }
 }

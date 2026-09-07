@@ -72,6 +72,17 @@
             <input type="date" id="exercise_date" name="exercise_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
           </div>
           <button class="btn btn-warning"><i class="bi bi-lightning-charge me-1"></i>Exercer</button>
+          <?php
+          $taxRate = (float) (\App\company()['option_tax_rate'] ?? 0);
+          if ($taxRate > 0):
+            $gainPerOption = max(0, (new \App\Modules\Options\OptionService())->referencePrice() - (int) $g['strike_price']);
+            $taxEstimate = (int) floor($exercisable * $gainPerOption * $taxRate); ?>
+            <p class="form-text small mb-0 mt-2">
+              <i class="bi bi-info-circle me-1"></i>Impact fiscal indicatif (Code Général des Impôts — avantage d'acquisition assimile à une rémunération) :
+              ≈ <strong><?= money($taxEstimate) ?></strong> pour la quantité exerçable (taux paramétrable <?= e(rtrim(rtrim(number_format($taxRate * 100, 2, ',', ' '), '0'), ',')) ?> %).
+              L'exercice requiert une résolution d'augmentation de capital (AGE).
+            </p>
+          <?php endif; ?>
         </form>
       </div>
     </div>
