@@ -6,8 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="CapTable — gestion du capital et des actions de T&amp;Tech Consulting Group (droit OHADA)">
 <title><?= e($title ?? 'CapTable') ?> · T&amp;Tech Consulting Group</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="<?= url('/assets/vendor/bootstrap.min.css') ?>" rel="stylesheet">
+<link href="<?= url('/assets/vendor/bootstrap-icons.min.css') ?>" rel="stylesheet">
 <link href="<?= url('/assets/css/app.css') ?>" rel="stylesheet">
 </head>
 <body data-baseurl="<?= e(url('/')) ?>">
@@ -77,8 +77,8 @@
 </footer>
 <?php endif; ?>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= url('/assets/vendor/bootstrap.bundle.min.js') ?>"></script>
 <script src="<?= url('/assets/js/app.js') ?>" defer></script>
-<?php if (!empty($charts)): ?><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script><?php endif; ?>
+<?php if (!empty($charts)): ?><script src="<?= url('/assets/vendor/chart.umd.min.js') ?>"></script><?php endif; ?>
 </body>
 </html>

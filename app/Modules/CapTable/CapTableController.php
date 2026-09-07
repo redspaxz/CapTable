@@ -25,6 +25,7 @@ class CapTableController extends Controller
             'totalShares' => $this->ownership->totalShares(),
             'totalCapital' => $this->ownership->totalCapital(),
             'company' => \App\company(),
+            'charts' => true,
         ]);
     }
 
