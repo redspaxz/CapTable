@@ -37,6 +37,29 @@ class OwnershipService
         return self::$cache[$key];
     }
 
+    private static ?bool $projectionAvailable = null;
+
+    /**
+     * True when the share_holdings projection table exists. On installs that
+     * predate the projection (deployed code, not-yet-migrated database) every
+     * current-state read falls back to the append-only register, so the app
+     * keeps working instead of erroring; once database/migrate_holdings.php
+     * has run, the projection takes over automatically. Probed once per
+     * request, never inside the memo cache.
+     */
+    public static function projectionAvailable(): bool
+    {
+        if (self::$projectionAvailable === null) {
+            try {
+                Database::one('SELECT 1 FROM share_holdings LIMIT 1');
+                self::$projectionAvailable = true;
+            } catch (\Throwable) {
+                self::$projectionAvailable = false;
+            }
+        }
+        return self::$projectionAvailable;
+    }
+
     /**
      * @param string|null $asOf ISO date - reconstruct the table as of that
      *                           date (movements after it are ignored).
@@ -47,7 +70,7 @@ class OwnershipService
         return self::remember(self::cacheKey('byShareholder', $asOf), function () use ($asOf): array {
             $net = $asOf === null
                 ? $this->netQuantities()
-                : $this->netQuantitiesAsOf($asOf);
+                : $this->netQuantitiesFromRegister($asOf);
 
             $classes = [];
             foreach (Database::all('SELECT * FROM share_classes') as $c) {
@@ -105,6 +128,9 @@ class OwnershipService
      */
     private function netQuantities(): array
     {
+        if (!self::projectionAvailable()) {
+            return $this->netQuantitiesFromRegister();
+        }
         return Database::all(
             'SELECT h.shareholder_id, h.share_class_id, h.quantity
              FROM share_holdings h
@@ -116,16 +142,25 @@ class OwnershipService
     }
 
     /**
-     * Net quantities reconstructed from the register up to a date.
-     *
-     * Aggregated in SQL with the same semantics as folding every movement:
-     * issuances add to the shareholder, transfer_out subtracts from the
-     * seller and adds to the counterparty. One GROUP BY, no row shipping.
+     * Net quantities per (shareholder, class) folded from the register,
+     * optionally up to a date. Same semantics as the projection and the
+     * original PHP fold: issuances/transfer_in add to the holder,
+     * transfer_out subtracts from the seller and adds to the buyer. One
+     * GROUP BY over the register, no row shipping into PHP.
      *
      * @return array<int, array{shareholder_id: int, share_class_id: int, quantity: int}>
      */
-    private function netQuantitiesAsOf(string $asOf): array
+    private function netQuantitiesFromRegister(?string $asOf = null): array
     {
+        $params = [];
+        $where1 = '';
+        $where2 = '';
+        if ($asOf !== null) {
+            $where1 = ' AND movement_date <= :asof';
+            $where2 = ' AND movement_date <= :asof2';
+            $params['asof'] = $asOf;
+            $params['asof2'] = $asOf;
+        }
         return Database::all(
             "SELECT shareholder_id, share_class_id, SUM(qty) AS quantity
              FROM (
@@ -133,20 +168,23 @@ class OwnershipService
                         CASE WHEN movement_type IN ('issuance','transfer_in') THEN CAST(quantity AS SIGNED)
                              WHEN movement_type = 'transfer_out' THEN -CAST(quantity AS SIGNED)
                              ELSE 0 END AS qty
-                 FROM share_movements WHERE movement_date <= :asof
+                 FROM share_movements WHERE 1 = 1{$where1}
                  UNION ALL
                  SELECT counterparty_id AS shareholder_id, share_class_id, CAST(quantity AS SIGNED) AS qty
                  FROM share_movements
-                 WHERE movement_type = 'transfer_out' AND counterparty_id > 0 AND movement_date <= :asof2
+                 WHERE movement_type = 'transfer_out' AND counterparty_id > 0{$where2}
              ) movements
              GROUP BY shareholder_id, share_class_id
              HAVING SUM(qty) > 0",
-            ['asof' => $asOf, 'asof2' => $asOf]
+            $params
         );
     }
 
     public function holding(int $shareholderId, int $classId, ?string $asOf = null): int
     {
+        if ($asOf === null && !self::projectionAvailable()) {
+            $asOf = '9999-12-31'; // no projection yet -> fold the register
+        }
         if ($asOf === null) {
             $row = Database::one(
                 'SELECT quantity FROM share_holdings WHERE shareholder_id = ? AND share_class_id = ?',
@@ -173,6 +211,9 @@ class OwnershipService
      */
     public function holdingsOf(int $shareholderId, ?string $asOf = null): array
     {
+        if ($asOf === null && !self::projectionAvailable()) {
+            $asOf = '9999-12-31'; // no projection yet -> fold the register
+        }
         $rows = $asOf === null
             ? Database::all(
                 'SELECT share_class_id, quantity FROM share_holdings WHERE shareholder_id = ? AND quantity > 0',
@@ -230,6 +271,9 @@ class OwnershipService
     public function outstandingByClass(?string $asOf = null): array
     {
         return self::remember(self::cacheKey('outstandingByClass', $asOf), function () use ($asOf): array {
+            if ($asOf === null && !self::projectionAvailable()) {
+                $asOf = '9999-12-31'; // no projection yet -> fold the register
+            }
             $rows = $asOf === null
                 ? Database::all('SELECT share_class_id, SUM(quantity) AS quantity FROM share_holdings GROUP BY share_class_id')
                 : Database::all(
@@ -248,6 +292,9 @@ class OwnershipService
 
     public function outstanding(int $classId, ?string $asOf = null): int
     {
+        if ($asOf === null && !self::projectionAvailable()) {
+            $asOf = '9999-12-31'; // no projection yet -> fold the register
+        }
         if ($asOf === null) {
             $row = Database::one(
                 'SELECT SUM(quantity) AS quantity FROM share_holdings WHERE share_class_id = ?',

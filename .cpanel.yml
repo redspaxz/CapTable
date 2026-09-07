@@ -7,3 +7,8 @@ deployment:
     # also drag the .git directory into the web root.
     - /bin/cp -R app config database public $DEPLOYPATH/
     - /bin/cp .htaccess $DEPLOYPATH/
+    # Migrations DB idempotentes (crée + backfill share_holdings sur les
+    # installs préexistantes). Tolérante : si le CLI PHP/DB n'est pas joignable
+    # le déploiement n'est pas bloqué — l'app replie alors le registre et la
+    # migration peut être relancée à la main (database/migrate_holdings.php).
+    - cd $DEPLOYPATH && (/usr/local/bin/php database/migrate_holdings.php || echo "WARN: migration share_holdings non exécutée - lancer php database/migrate_holdings.php")

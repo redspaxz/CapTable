@@ -280,6 +280,20 @@ echo "== T16 Cohérence de la projection =="
 ( cd "$BASE" && DB_DRIVER=sqlite php scripts/check_holdings.php ) >/dev/null 2>&1 \
     && ok "share_holdings identique au repli du registre" || ko "projection divergente du registre"
 
+# ---- T17 Migration d'une install pré-existante ---------------------------------------------
+# Simule un déploiement dont la base prédate la projection : la table est
+# supprimée, l'app doit continuer à servir le dashboard en repliant le
+# registre (plus de 500), puis database/migrate_holdings.php doit recréer la
+# table et la backfiller à l'identique.
+echo "== T17 Migration share_holdings =="
+php -r '$p = new PDO("sqlite:" . $argv[1]); $p->exec("DROP TABLE share_holdings");' "$DB"
+C=$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' "$URL/")
+[ "$C" = 200 ] && ok "sans la projection : le dashboard replie le registre (200)" || ko "sans la projection : dashboard en erreur ($C)"
+( cd "$BASE" && DB_DRIVER=sqlite php database/migrate_holdings.php ) >/dev/null 2>&1 \
+    && ok "migration : table recréée et backfillée depuis le registre" || ko "migration en échec"
+( cd "$BASE" && DB_DRIVER=sqlite php scripts/check_holdings.php ) >/dev/null 2>&1 \
+    && ok "projection re-cohérente avec le registre après migration" || ko "projection divergente après migration"
+
 # ---- Bilan -------------------------------------------------------------------------------
 echo
 echo "=================================================="

@@ -162,10 +162,14 @@ class ShareService
      * inside the same transaction as the movement write; rows whose net
      * quantity reaches zero are removed so the projection stays minimal.
      * The register remains the source of truth (as-of reads ignore this).
+     * When the projection table has not been deployed yet (install predates
+     * database/migrate_holdings.php), maintenance is skipped silently and
+     * OwnershipService reads fall back to the register, so writes keep
+     * working and the projection self-heals after the migration runs.
      */
     private function adjustHolding(int $shareholderId, int $classId, int $delta): void
     {
-        if ($delta === 0) {
+        if ($delta === 0 || !OwnershipService::projectionAvailable()) {
             return;
         }
         $row = Database::one(
