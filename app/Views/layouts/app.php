@@ -1,4 +1,4 @@
-<?php use App\Core\Auth; use function App\{e, url}; ?>
+<?php use App\Core\Auth; use function App\{e, url, asset}; ?>
 <!doctype html>
 <html lang="fr">
 <head>
@@ -6,9 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="CapTable — gestion du capital et des actions de T&amp;Tech Consulting Group (droit OHADA)">
 <title><?= e($title ?? 'CapTable') ?> · T&amp;Tech Consulting Group</title>
-<link href="<?= url('/assets/vendor/bootstrap.min.css') ?>" rel="stylesheet">
-<link href="<?= url('/assets/vendor/bootstrap-icons.min.css') ?>" rel="stylesheet">
-<link href="<?= url('/assets/css/app.css') ?>" rel="stylesheet">
+<link href="<?= asset('/assets/vendor/bootstrap.min.css') ?>" rel="stylesheet">
+<link href="<?= asset('/assets/vendor/bootstrap-icons.min.css') ?>" rel="stylesheet">
+<link href="<?= asset('/assets/css/app.css') ?>" rel="stylesheet">
 </head>
 <body data-baseurl="<?= e(url('/')) ?>">
 <?php if (Auth::check()): ?>
@@ -82,8 +82,8 @@
 </footer>
 <?php endif; ?>
 
-<script src="<?= url('/assets/vendor/bootstrap.bundle.min.js') ?>"></script>
-<script src="<?= url('/assets/js/app.js') ?>" defer></script>
-<?php if (!empty($charts)): ?><script src="<?= url('/assets/vendor/chart.umd.min.js') ?>"></script><?php endif; ?>
+<script src="<?= asset('/assets/vendor/bootstrap.bundle.min.js') ?>"></script>
+<script src="<?= asset('/assets/js/app.js') ?>" defer></script>
+<?php if (!empty($charts)): ?><script src="<?= asset('/assets/vendor/chart.umd.min.js') ?>"></script><?php endif; ?>
 </body>
 </html>

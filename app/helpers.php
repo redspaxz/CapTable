@@ -27,6 +27,20 @@ function redirect(string $path): void
     exit;
 }
 
+/**
+ * Asset URL with a cache-busting version (file mtime). Assets are served
+ * with a long max-age (Cloudflare/browser caches), so an unversioned URL
+ * keeps serving the stale copy after a deploy replaces the file. Because
+ * each deploy rewrites the file with a fresh mtime, the query string
+ * changes and caches fetch the new version automatically.
+ */
+function asset(string $path): string
+{
+    $file = BASE_PATH . '/public' . $path;
+    $version = is_file($file) ? (string) filemtime($file) : '0';
+    return url($path) . '?v=' . $version;
+}
+
 /** Format an integer amount of XAF (no decimals). */
 function money(int|string|null $amount): string
 {
