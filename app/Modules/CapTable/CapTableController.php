@@ -115,8 +115,7 @@ class CapTableController extends Controller
                  LEFT JOIN shareholders cp ON cp.id = m.counterparty_id
                  LEFT JOIN share_classes c ON c.id = m.share_class_id
                  ORDER BY m.movement_date DESC, m.id DESC
-                 LIMIT ? OFFSET ?',
-                [$perPage, ($page - 1) * $perPage]
+                 LIMIT ' . (int) $perPage . ' OFFSET ' . (int) (($page - 1) * $perPage)
             ),
             'company' => \App\company(),
             'page' => $page,
