@@ -13,7 +13,9 @@ class App
     {
         self::init($configFile);
         $this->router = new Router();
-        Session::start();
+        // The session is started lazily in Router::dispatch() once a route
+        // matches, so 404s (and HEAD probes of unknown paths) do not emit a
+        // session cookie.
     }
 
     public static function init(string $configFile): void

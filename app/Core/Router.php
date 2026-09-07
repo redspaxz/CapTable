@@ -28,10 +28,21 @@ class Router
         $this->routes[$method][$regex] = ['handler' => $handler, 'middleware' => $middleware];
     }
 
+    /**
+     * Route a request. HEAD requests are served by the GET handlers (their
+     * body is suppressed; the SAPI drops it anyway, this avoids generating
+     * it). The session is started only once a route matches, so 404s do not
+     * emit a session cookie.
+     */
     public function dispatch(string $method, string $path): void
     {
+        $isHead = $method === 'HEAD';
+        if ($isHead) {
+            $method = 'GET';
+        }
         foreach ($this->routes[$method] ?? [] as $regex => $route) {
             if (preg_match($regex, rtrim($path, '/') ?: '/', $matches)) {
+                Session::start();
                 $args = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
                 foreach ($route['middleware'] as $mw) {
                     $mw();
@@ -41,7 +52,10 @@ class Router
                     [$class, $action] = $handler;
                     $handler = [new $class(), $action];
                 }
-                echo call_user_func_array($handler, array_values($args));
+                $output = call_user_func_array($handler, array_values($args));
+                if (!$isHead) {
+                    echo $output;
+                }
                 return;
             }
         }

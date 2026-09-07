@@ -171,6 +171,12 @@ C=$(code /api/holdings/1)
 [ "$C" = 302 ] && ok "API holdings protégée par authentification" || ko "API exposée sans authentification ($C)"
 H=$(get /health)
 has "$H" "connected" && ok "diagnostic /health : base connectée" || ko "/health"
+C=$(curl -s -I -o /dev/null -w '%{http_code}' "$URL/login")
+[ "$C" = 200 ] && ok "HEAD sur route valide servi par la route GET (200)" || ko "HEAD sur route valide ($C)"
+H=$(curl -s -D - -o /dev/null "$URL/route-inconnue")
+echo "$H" | grep -qi '^set-cookie:' \
+    && ko "cookie de session émis sur une 404" \
+    || ok "pas de cookie de session sur une 404"
 
 # ---- T10 Options & vesting (ESOP) -----------------------------------------
 echo "== T10 Options & vesting =="

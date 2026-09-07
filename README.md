@@ -80,7 +80,7 @@ bash scripts/uat.sh          # port personnalisé : UAT_PORT=9090 bash scripts/u
 | T6 Cap table & registre | pourcentages exacts multi-catégories, capital recalculé, export CSV, registre art. 716 |
 | T7 Documents | certificat d'actions émis/imprimable + garde-fou, acte de cession, PV d'assemblée avec présence exacte |
 | T8 Contrôle d'accès | rôle viewer : lecture seule, écriture rejetée (403) |
-| T9 Sécurité | CSRF (419), redirection anonyme, API protégée, diagnostic `/health` |
+| T9 Sécurité | CSRF (419), redirection anonyme, API protégée, diagnostic `/health`, HEAD servi par la route GET, pas de cookie de session sur 404 |
 | T10 Options & vesting | attribution, acquises au cliff, exercice automatisé (émission EX- + registre), garde-fou d'exercice |
 | T11 Waterfall | préférence de liquidation puis reliquat au prorata — montants exacts |
 | T12 Portails & historique | portail employé (options, valeur acquise), portail fondateur (titres), capital reconstitué à date |
@@ -90,7 +90,7 @@ bash scripts/uat.sh          # port personnalisé : UAT_PORT=9090 bash scripts/u
 | T16 Cohérence projection | `share_holdings` identique au repli du registre après chaque écriture (agrément, exercice, émission) |
 | T17 Migration install v1 | table supprimée → l'app replie le registre (200), migration recrée + backfill, projection re-cohérente |
 
-**Dernière exécution : 2026-09-07 — 57/57 réussis** (PHP 8.2, SQLite). Les lectures temps réel passent par la projection `share_holdings` maintenue transactionnellement (registres volumineux : < 1 ms / 2 MiB contre ~120 ms / 90 MiB par repli PHP) ; l'historique à date reste reconstitué en SQL. Si la table est absente (install pré-projection), l'app replie le registre en attendant la migration `database/migrate_holdings.php` (idempotente, lancée automatiquement au déploiement cPanel). Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
+**Dernière exécution : 2026-09-07 — 59/59 réussis** (PHP 8.2, SQLite). Les lectures temps réel passent par la projection `share_holdings` maintenue transactionnellement (registres volumineux : < 1 ms / 2 MiB contre ~120 ms / 90 MiB par repli PHP) ; l'historique à date reste reconstitué en SQL. Si la table est absente (install pré-projection), l'app replie le registre en attendant la migration `database/migrate_holdings.php` (idempotente, lancée automatiquement au déploiement cPanel). Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
 
 ## Déploiement cPanel (hébergement mutualisé)
 
