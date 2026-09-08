@@ -23,7 +23,7 @@ return [
     'Log out' => 'Déconnexion',
     'Language' => 'Langue',
     'Main navigation' => 'Navigation principale',
-    'OHADA compliant (AUSCGIE art. 716) · CapTable v1' => 'Conforme au droit OHADA (AUSCGIE art. 716) · CapTable v1',
+    'OHADA compliant (AUSCGIE art. 716)' => 'Conforme au droit OHADA (AUSCGIE art. 716)',
 
     // Login & error pages
     'Share capital & equity management' => 'Gestion du capital et des actions',

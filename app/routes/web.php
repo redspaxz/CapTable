@@ -37,7 +37,7 @@ $router->get('/health', function () {
             : 'error ' . $e->getCode() . ' (connexion refusée ou base inaccessible)';
     }
     echo json_encode([
-        'app' => 'CapTable',
+        'app' => 'T&T',
         'php' => PHP_VERSION,
         'base_path' => App\Core\Request::basePath(),
         'database' => $db,

@@ -4,8 +4,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="CapTable — share capital &amp; equity management for T&amp;Tech Consulting Group (OHADA law)">
-<title><?= e($title ?? 'CapTable') ?> · T&amp;Tech Consulting Group</title>
+<meta name="description" content="Share capital &amp; equity management for T&amp;Tech Consulting Group (OHADA law)">
+<title><?= e($title ?? 'T&T') ?> · T&amp;Tech Consulting Group</title>
 <link href="<?= asset('/assets/vendor/bootstrap.min.css') ?>" rel="stylesheet">
 <link href="<?= asset('/assets/vendor/bootstrap-icons.min.css') ?>" rel="stylesheet">
 <link href="<?= asset('/assets/css/app.css') ?>" rel="stylesheet">
@@ -17,7 +17,6 @@
     <div class="container-fluid">
       <a class="navbar-brand d-flex align-items-center gap-2" href="<?= url('/') ?>">
         <span class="brand-mark" aria-hidden="true">T&amp;T</span>
-        <span class="fw-semibold d-none d-sm-inline">CapTable</span>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"
               aria-controls="nav" aria-expanded="false" aria-label="<?= __('Toggle navigation') ?>">
@@ -84,7 +83,7 @@
 <footer class="app-footer mt-auto">
   <div class="container-fluid py-3 small text-muted d-flex flex-column flex-md-row justify-content-between gap-1">
     <span><strong>T&amp;Tech Consulting Group</strong> — RCCM <?= e(\App\company()['rccm'] ?? '—') ?> · <?= e(\App\company()['head_office'] ?? '') ?></span>
-    <span><?= __('OHADA compliant (AUSCGIE art. 716) · CapTable v1') ?></span>
+    <span><?= __('OHADA compliant (AUSCGIE art. 716)') ?></span>
   </div>
 </footer>
 <?php endif; ?>
