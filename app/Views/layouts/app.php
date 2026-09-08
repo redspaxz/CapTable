@@ -24,7 +24,7 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="nav">
-        <ul class="navbar-nav me-auto gap-lg-1">
+        <ul class="navbar-nav me-auto gap-lg-0">
           <li class="nav-item"><a class="nav-link" href="<?= url('/portal') ?>"><i class="bi bi-person-badge me-1"></i>My space</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/') ?>"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/captable') ?>"><i class="bi bi-pie-chart me-1"></i>Capital</a></li>
@@ -57,7 +57,7 @@
 </header>
 <?php endif; ?>
 
-<main class="app-main py-4">
+<main class="app-main py-3">
   <div class="container-fluid">
     <?php if (!empty($flash['success'])): ?>
       <div class="alert alert-success d-flex align-items-center gap-2" role="alert">

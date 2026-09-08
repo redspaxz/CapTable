@@ -32,8 +32,12 @@ body {
   font-weight: 700;
   letter-spacing: 0.02em;
 }
-.navbar .nav-link { border-radius: 0.4rem; padding-inline: 0.6rem; }
+.navbar .nav-link { border-radius: 0.4rem; padding-inline: 0.4rem; white-space: nowrap; font-size: 0.9rem; }
 .navbar .nav-link:hover { background: rgba(255, 255, 255, 0.12); }
+@media (max-width: 1399.98px) {
+  .navbar .nav-link { padding-inline: 0.3rem; font-size: 0.85rem; }
+  .navbar .nav-link .bi { display: none; }
+}
 
 /* Cards & tables */
 .card {
@@ -62,9 +66,10 @@ body {
 .stat-card { transition: transform 0.12s ease; }
 .stat-card:hover { transform: translateY(-2px); }
 
-/* Login screen */
+/* Login screen — compense le padding du main pour occuper exactement le reste du viewport */
 .login-screen {
-  min-height: 100vh;
+  min-height: calc(100vh - 132px);
+  min-height: calc(100dvh - 132px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,6 +83,9 @@ body {
   border-bottom: 0;
   padding-bottom: 0;
 }
+
+/* Pastilles de légende (répartition du capital) */
+.badge.dot { width: 0.55rem; height: 0.55rem; padding: 0; border-radius: 50%; display: inline-block; }
 
 /* Legal documents (certificate, deed, minutes) */
 .certificate { background: #fffdf5; }
