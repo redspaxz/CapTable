@@ -27,18 +27,18 @@ class AuthController extends Controller
     {
         Csrf::verify();
         if ($this->tooManyAttempts()) {
-            \App\flash('error', 'Too many login attempts. Please try again in a few minutes.');
+            \App\flash('error', __('Too many login attempts. Please try again in a few minutes.'));
             redirect('/login');
         }
         $email = Request::str('email');
         $password = Request::str('password');
         if (filter_var($email, FILTER_VALIDATE_EMAIL) && Auth::attempt($email, $password)) {
             $this->clearAttempts();
-            \App\flash('success', 'Welcome!');
+            \App\flash('success', __('Welcome!'));
             redirect('/');
         }
         $this->recordAttempt();
-        \App\flash('error', 'Invalid credentials.');
+        \App\flash('error', __('Invalid credentials.'));
         redirect('/login');
     }
 

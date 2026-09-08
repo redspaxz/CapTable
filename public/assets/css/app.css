@@ -68,6 +68,7 @@ body {
 
 /* Login screen — compense le padding du main pour occuper exactement le reste du viewport */
 .login-screen {
+  position: relative;
   min-height: calc(100vh - 132px);
   min-height: calc(100dvh - 132px);
   display: flex;

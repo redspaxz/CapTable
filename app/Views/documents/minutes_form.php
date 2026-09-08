@@ -1,54 +1,54 @@
 <?php use function App\{e, url, shares, pct}; ?>
-<h1 class="h4 mb-3">Draft general meeting minutes</h1>
+<h1 class="h4 mb-3"><?= __('Draft general meeting minutes') ?></h1>
 <div class="card bg-white shadow-sm"><div class="card-body">
 <form method="post" action="<?= url('/documents/minutes') ?>">
   <?= App\Core\Csrf::field() ?>
   <div class="row g-3">
     <div class="col-md-3">
-      <label class="form-label">Meeting type *</label>
+      <label class="form-label"><?= __('Meeting type') ?> *</label>
       <select name="meeting_type" id="meeting_type" class="form-select">
-        <option value="AGE">EGM (extraordinary)</option>
-        <option value="AGO">AGM (ordinary)</option>
-        <option value="AGC">Constitutive AGM</option>
+        <option value="AGE"><?= __('EGM (extraordinary)') ?></option>
+        <option value="AGO"><?= __('AGM (ordinary)') ?></option>
+        <option value="AGC"><?= __('Constitutive AGM') ?></option>
       </select>
     </div>
     <div class="col-md-3">
-      <label class="form-label">Resolution template</label>
+      <label class="form-label"><?= __('Resolution template') ?></label>
       <select id="template" class="form-select">
-        <option value="">— Free —</option>
-        <option value="capital_increase">Capital increase</option>
-        <option value="buyback">Share buyback / cancellation</option>
-        <option value="conversion">OCA / BSA conversion</option>
-        <option value="transfer_approval">Transfer approval (consent)</option>
+        <option value="">— <?= __('Free') ?> —</option>
+        <option value="capital_increase"><?= __('Capital increase') ?></option>
+        <option value="buyback"><?= __('Share buyback / cancellation') ?></option>
+        <option value="conversion"><?= __('OCA / BSA conversion') ?></option>
+        <option value="transfer_approval"><?= __('Transfer approval (consent)') ?></option>
       </select>
     </div>
     <div class="col-md-3">
-      <label class="form-label">Date *</label>
+      <label class="form-label"><?= __('Date') ?> *</label>
       <input type="date" name="meeting_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
     </div>
     <div class="col-md-6">
-      <label class="form-label">Location *</label>
+      <label class="form-label"><?= __('Location') ?> *</label>
       <input name="location" class="form-control" value="Registered office" required>
     </div>
     <div class="col-12">
-      <label class="form-label">Agenda *</label>
+      <label class="form-label"><?= __('Agenda') ?> *</label>
       <textarea name="agenda" class="form-control" rows="3" required></textarea>
     </div>
     <div class="col-12">
-      <label class="form-label">Resolutions adopted *</label>
+      <label class="form-label"><?= __('Resolutions adopted') ?> *</label>
       <textarea name="resolutions" class="form-control" rows="5" required></textarea>
     </div>
   </div>
   <div class="mt-3">
-    <button class="btn btn-primary">Generate minutes</button>
-    <a href="<?= url('/documents') ?>" class="btn btn-outline-secondary">Cancel</a>
+    <button class="btn btn-primary"><?= __('Generate minutes') ?></button>
+    <a href="<?= url('/documents') ?>" class="btn btn-outline-secondary"><?= __('Cancel') ?></a>
   </div>
 </form>
 </div></div>
 
 <h2 class="h6 mt-4">Expected attendance (current breakdown)</h2>
 <table class="table table-sm bg-white shadow-sm w-auto">
-  <thead><tr><th>Shareholder</th><th class="text-end">Shares</th><th class="text-end">% — voting rights</th></tr></thead>
+  <thead><tr><th><?= __('Shareholder') ?></th><th class="text-end"><?= __('Shares') ?></th><th class="text-end">% — voting rights</th></tr></thead>
   <tbody>
     <?php foreach ($holdings as $h): ?>
     <tr><td><?= e($h['shareholder']['name']) ?></td><td class="text-end"><?= shares($h['total']) ?></td><td class="text-end"><?= pct($h['percentage']) ?></td></tr>

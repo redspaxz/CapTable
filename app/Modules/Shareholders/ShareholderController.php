@@ -58,7 +58,7 @@ class ShareholderController extends Controller
             [$data['type'], $data['name'], $data['id_number'], $data['id_type'], $data['address'],
              $data['email'], $data['phone'], $data['nationality'], $data['notes']]
         );
-        \App\flash('success', 'Shareholder saved.');
+        \App\flash('success', __('Shareholder saved.'));
         redirect('/shareholders');
     }
 
@@ -91,7 +91,7 @@ class ShareholderController extends Controller
             [$data['type'], $data['name'], $data['id_number'], $data['id_type'], $data['address'],
              $data['email'], $data['phone'], $data['nationality'], $data['notes'], $id]
         );
-        \App\flash('success', 'Shareholder updated.');
+        \App\flash('success', __('Shareholder updated.'));
         redirect('/shareholders');
     }
 

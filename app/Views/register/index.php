@@ -1,16 +1,16 @@
 <?php use function App\{e, url, shares}; ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
-    <h1 class="h4 mb-0">Share movement register</h1>
-    <div class="text-muted small">AUSCGIE (OHADA Uniform Act), art. 716 — <?= e($company['name'] ?? '') ?></div>
+    <h1 class="h4 mb-0"><?= __('Share movement register') ?></h1>
+    <div class="text-muted small"><?= __('AUSCGIE (OHADA Uniform Act), art. 716') ?> — <?= e($company['name'] ?? '') ?></div>
   </div>
-  <button class="btn btn-outline-dark" onclick="window.print()">🖨 Print</button>
+  <button class="btn btn-outline-dark" onclick="window.print()">🖨 <?= __('Print') ?></button>
 </div>
 <table class="table table-sm table-striped bg-white shadow-sm" data-enhance="table">
-  <thead class="table-dark"><tr><th>#</th><th>Date</th><th>Type</th><th>Holder</th><th>Counterparty</th><th>Class</th><th class="text-end">Shares</th><th>Reference</th><th>Notary / RCCM</th></tr></thead>
+  <thead class="table-dark"><tr><th>#</th><th><?= __('Date') ?></th><th><?= __('Type') ?></th><th><?= __('Holder') ?></th><th><?= __('Counterparty') ?></th><th><?= __('Class') ?></th><th class="text-end"><?= __('Shares') ?></th><th><?= __('Reference') ?></th><th><?= __('Notary / RCCM') ?></th></tr></thead>
   <tbody>
     <?php foreach ($movements as $m):
-      $labels = ['issuance' => 'Issuance', 'transfer_out' => 'Transfer — out', 'transfer_in' => 'Transfer — in']; ?>
+      $labels = ['issuance' => __('Issuance'), 'transfer_out' => __('Transfer — out'), 'transfer_in' => __('Transfer — in')]; ?>
     <tr>
       <td><?= (int) $m['id'] ?></td>
       <td><?= e($m['movement_date']) ?></td>
@@ -22,7 +22,7 @@
       <td><?= e($m['reference']) ?></td>
       <td class="small">
         <?php if (!empty($m['notary_reference'])): ?>
-          <span class="badge text-bg-dark">Notary <?= e($m['notary_reference']) ?></span>
+          <span class="badge text-bg-dark"><?= __('Notary') ?> <?= e($m['notary_reference']) ?></span>
         <?php endif; ?>
         <?php if (!empty($m['rccm_reference'])): ?>
           <span class="badge text-bg-info">RCCM <?= e($m['rccm_reference']) ?></span>
@@ -33,20 +33,20 @@
       </td>
     </tr>
     <?php endforeach; ?>
-    <?php if ($movements === []): ?><tr><td colspan="9" class="text-center text-muted py-4">The register is empty.</td></tr><?php endif; ?>
+    <?php if ($movements === []): ?><tr><td colspan="9" class="text-center text-muted py-4"><?= __('The register is empty.') ?></td></tr><?php endif; ?>
   </tbody>
 </table>
 <?php if (($pages ?? 1) > 1): ?>
-<nav aria-label="Register pagination">
+<nav aria-label="<?= __('Register pagination') ?>">
   <ul class="pagination pagination-sm justify-content-center mt-3">
     <li class="page-item <?= ($page ?? 1) <= 1 ? 'disabled' : '' ?>">
-      <a class="page-link" href="<?= url('/register?page=' . (($page ?? 1) - 1)) ?>">← Previous</a>
+      <a class="page-link" href="<?= url('/register?page=' . (($page ?? 1) - 1)) ?>">← <?= __('Previous') ?></a>
     </li>
     <li class="page-item disabled">
-      <span class="page-link">Page <?= (int) ($page ?? 1) ?> / <?= (int) ($pages ?? 1) ?> — <?= number_format((float) ($total ?? 0), 0, ',', ' ') ?> movement(s)</span>
+      <span class="page-link"><?= __('Page') ?> <?= (int) ($page ?? 1) ?> / <?= (int) ($pages ?? 1) ?> — <?= number_format((float) ($total ?? 0), 0, ',', ' ') ?> <?= __('movement(s)') ?></span>
     </li>
     <li class="page-item <?= ($page ?? 1) >= ($pages ?? 1) ? 'disabled' : '' ?>">
-      <a class="page-link" href="<?= url('/register?page=' . (($page ?? 1) + 1)) ?>">Next →</a>
+      <a class="page-link" href="<?= url('/register?page=' . (($page ?? 1) + 1)) ?>"><?= __('Next') ?> →</a>
     </li>
   </ul>
 </nav>

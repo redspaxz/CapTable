@@ -43,7 +43,7 @@ class ShareClassController extends Controller
         $v = new Validator($data);
         $v->required('code', 'name')->positive('nominal_value', 'shares_authorized')->date('lockup_until');
         if ($v->fails() || Database::one('SELECT id FROM share_classes WHERE code = ?', [$data['code']])) {
-            \App\flash('error', 'Code, label, par value and authorized count are required (code must be unique).');
+            \App\flash('error', __('Code, label, par value and authorized count are required (code must be unique).'));
             redirect('/classes');
         }
         Database::execute(
@@ -52,7 +52,7 @@ class ShareClassController extends Controller
              $data['liquidation_multiplier'], $data['liquidation_priority'], $data['participating'],
              $data['category'], $data['voting_weight'], $data['requires_approval'], $data['lockup_until']]
         );
-        \App\flash('success', 'Share class created.');
+        \App\flash('success', __('Share class created.'));
         redirect('/classes');
     }
 }

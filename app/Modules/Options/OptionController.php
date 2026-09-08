@@ -63,7 +63,7 @@ class OptionController extends Controller
                 $data['cliff_months'],
                 $data['notes']
             );
-            \App\flash('success', 'Option grant recorded.');
+            \App\flash('success', __('Option grant recorded.'));
         } catch (\InvalidArgumentException $e) {
             \App\flash('error', $e->getMessage());
             redirect('/options/new');
@@ -109,7 +109,7 @@ class OptionController extends Controller
         $date = Request::str('exercise_date', date('Y-m-d'));
         try {
             (new OptionService())->exercise($id, $quantity, $date, Request::str('reference'));
-            \App\flash('success', 'Exercise completed: shares issued and recorded in the movement register.');
+            \App\flash('success', __('Exercise completed: shares issued and recorded in the movement register.'));
         } catch (\InvalidArgumentException $e) {
             \App\flash('error', $e->getMessage());
         }

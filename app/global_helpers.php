@@ -12,6 +12,11 @@ function e(mixed $value): string
     return \App\e($value);
 }
 
+function __(string $key, array $replace = []): string
+{
+    return \App\__($key, $replace);
+}
+
 function url(string $path = '/'): string
 {
     return \App\url($path);

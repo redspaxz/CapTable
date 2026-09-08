@@ -29,14 +29,14 @@ class OptionService
         string $notes = ''
     ): int {
         if ($quantity <= 0 || $vestMonths <= 0) {
-            throw new \InvalidArgumentException('Quantity and vesting duration must be positive.');
+            throw new \InvalidArgumentException(__('Quantity and vesting duration must be positive.'));
         }
         if ($cliffMonths < 0 || $cliffMonths > $vestMonths) {
-            throw new \InvalidArgumentException('The cliff must be between 0 and the vesting duration.');
+            throw new \InvalidArgumentException(__('The cliff must be between 0 and the vesting duration.'));
         }
         $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$classId]);
         if (!$class) {
-            throw new \InvalidArgumentException('Unknown share class.');
+            throw new \InvalidArgumentException(__('Unknown share class.'));
         }
         Database::execute(
             'INSERT INTO option_grants (shareholder_id, share_class_id, quantity, strike_price, granted_at, vest_months, cliff_months, notes)
@@ -103,16 +103,16 @@ class OptionService
     public function exercise(int $grantId, int $quantity, string $date, string $reference = ''): int
     {
         if ($quantity <= 0) {
-            throw new \InvalidArgumentException('Invalid exercise quantity.');
+            throw new \InvalidArgumentException(__('Invalid exercise quantity.'));
         }
         $grant = Database::one('SELECT * FROM option_grants WHERE id = ?', [$grantId]);
         if (!$grant) {
-            throw new \InvalidArgumentException('Grant not found.');
+            throw new \InvalidArgumentException(__('Grant not found.'));
         }
         $available = $this->exercisableQty($grant);
         if ($quantity > $available) {
             throw new \InvalidArgumentException(
-                "Insufficient options: {$available} exercisable (vesting not elapsed or already exercised)."
+                __('Insufficient options: :available exercisable (vesting not elapsed or already exercised).', ['available' => $available])
             );
         }
 

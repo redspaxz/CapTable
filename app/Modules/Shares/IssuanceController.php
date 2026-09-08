@@ -59,12 +59,12 @@ class IssuanceController extends Controller
         $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$data['share_class_id']]);
         $ownership = new OwnershipService();
         if ($v->fails() || !$class) {
-            \App\flash('error', 'Class, shareholder, quantity and date are required.');
+            \App\flash('error', __('Class, shareholder, quantity and date are required.'));
             redirect('/issuances/new');
         }
         $remaining = (int) $class['shares_authorized'] - $ownership->outstanding($data['share_class_id']);
         if ($data['quantity'] > $remaining) {
-            \App\flash('error', "Quota exceeded: only {$remaining} share(s) remain available for issuance in this class.");
+            \App\flash('error', __('Quota exceeded: only :remaining share(s) remain available for issuance in this class.', ['remaining' => $remaining]));
             redirect('/issuances/new');
         }
 
@@ -76,7 +76,7 @@ class IssuanceController extends Controller
             $data['issuance_date'],
             $data['reference'] !== '' ? $data['reference'] : 'EM-' . date('Ymd') . '-' . random_int(100, 999)
         );
-        \App\flash('success', 'Issuance recorded in the share movement register.');
+        \App\flash('success', __('Issuance recorded in the share movement register.'));
         redirect('/issuances');
     }
 }

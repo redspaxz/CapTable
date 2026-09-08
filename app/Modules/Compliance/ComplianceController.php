@@ -61,7 +61,7 @@ class ComplianceController extends Controller
         $v = new Validator($data);
         $v->required('name', 'id_number')->date('declared_at');
         if ($v->fails() || $data['ownership_pct'] < 0 || $data['ownership_pct'] > 100) {
-            \App\flash('error', 'Name, ID document and percentage (0-100) are required.');
+            \App\flash('error', __('Name, ID document and percentage (0-100) are required.'));
             redirect('/compliance/ubo/new');
         }
         Database::execute(
@@ -70,7 +70,7 @@ class ComplianceController extends Controller
             [$data['name'], $data['id_number'], $data['nationality'], $data['ownership_pct'],
              $data['control_nature'], $data['shareholder_id'], $data['declared_at'], $data['notes']]
         );
-        \App\flash('success', 'Beneficial owner declared.');
+        \App\flash('success', __('Beneficial owner declared.'));
         redirect('/compliance');
     }
 }

@@ -45,11 +45,11 @@ class DocumentController extends Controller
         $quantity = Request::int('quantity');
         $holding = (new OwnershipService())->holding($shareholderId, $classId);
         if ($quantity <= 0 || $quantity > $holding) {
-            \App\flash('error', "Invalid quantity: the shareholder holds {$holding} share(s) in this class.");
+            \App\flash('error', __('Invalid quantity: the shareholder holds :holding share(s) in this class.', ['holding' => $holding]));
             redirect('/documents/certificates/new');
         }
         (new ShareService())->issueCertificate($shareholderId, $classId, $quantity, date('Y-m-d'));
-        \App\flash('success', 'Certificate issued.');
+        \App\flash('success', __('Certificate issued.'));
         redirect('/documents');
     }
 
@@ -117,7 +117,7 @@ class DocumentController extends Controller
         $v = new Validator($data);
         $v->required('meeting_type', 'meeting_date', 'agenda', 'resolutions')->date('meeting_date');
         if ($v->fails()) {
-            \App\flash('error', 'Type, date, agenda and resolutions are required.');
+            \App\flash('error', __('Type, date, agenda and resolutions are required.'));
             redirect('/documents/minutes/new');
         }
         Database::execute(

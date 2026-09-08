@@ -160,6 +160,7 @@ CREATE TABLE IF NOT EXISTS option_exercises (
 ALTER TABLE settings ADD COLUMN secondary_currency TEXT;
 ALTER TABLE settings ADD COLUMN fx_rate REAL NOT NULL DEFAULT 1.0;      -- XAF per 1 unit of secondary currency
 ALTER TABLE settings ADD COLUMN option_tax_rate REAL NOT NULL DEFAULT 0.30;
+ALTER TABLE settings ADD COLUMN default_language VARCHAR(5) NOT NULL DEFAULT 'en';
 
 ALTER TABLE share_classes ADD COLUMN category TEXT NOT NULL DEFAULT 'ordinary';  -- ordinary|preference|adpsdv
 ALTER TABLE share_classes ADD COLUMN voting_weight INTEGER NOT NULL DEFAULT 1;   -- 0 = sans droit de vote, 2 = double vote

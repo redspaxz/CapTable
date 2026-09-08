@@ -13,6 +13,7 @@ use App\Modules\Documents\DocumentController;
 use App\Modules\Options\OptionController;
 use App\Modules\Portals\PortalController;
 use App\Modules\Security\AuthController;
+use App\Modules\Settings\SettingsController;
 use App\Modules\Shares\IssuanceController;
 use App\Modules\Shares\ShareClassController;
 use App\Modules\Shares\TransferController;
@@ -49,6 +50,23 @@ $router->get('/health', function () {
 $router->get('/login', [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->post('/logout', [AuthController::class, 'logout']);
+
+// UI language switcher (session-wide; default configured in Settings)
+$router->get('/lang/{code}', function (string $code) {
+    \App\Core\Lang::set($code);
+    $back = $_SERVER['HTTP_REFERER'] ?? '';
+    $base = rtrim(url('/'), '/');
+    if ($back !== '' && str_starts_with($back, $base)) {
+        header('Location: ' . $back);
+    } else {
+        \App\redirect('/');
+    }
+    return '';
+});
+
+// Settings (admin)
+$router->get('/settings', [SettingsController::class, 'index'], [$admin]);
+$router->post('/settings', [SettingsController::class, 'update'], [$admin]);
 
 // Dashboard
 $router->get('/', [DashboardController::class, 'index'], [$auth]);

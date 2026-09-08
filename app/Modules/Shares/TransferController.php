@@ -51,19 +51,19 @@ class TransferController extends Controller
         $v->required('share_class_id', 'seller_id', 'buyer_id', 'quantity', 'transfer_date')
           ->positive('share_class_id', 'seller_id', 'buyer_id', 'quantity')->date('transfer_date');
         if ($v->fails()) {
-            \App\flash('error', 'All fields are required.');
+            \App\flash('error', __('All fields are required.'));
             redirect('/transfers/new');
         }
         $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$data['share_class_id']]);
         if (!$class) {
-            \App\flash('error', 'Unknown share class.');
+            \App\flash('error', __('Unknown share class.'));
             redirect('/transfers/new');
         }
         $compliance = new \App\Modules\Compliance\ComplianceService();
         $reference = $data['deed_reference'] !== '' ? $data['deed_reference'] : 'ACT-' . date('Ymd') . '-' . random_int(100, 999);
         try {
             if ($compliance->isBlocked($class, $data['transfer_date'])) {
-                \App\flash('error', 'Transfer refused: ' . implode(' ', $compliance->transferRestrictions($class, $data['transfer_date'])));
+                \App\flash('error', __('Transfer refused: :reasons', ['reasons' => implode(' ', $compliance->transferRestrictions($class, $data['transfer_date']))]));
                 redirect('/transfers/new');
             }
             if ($compliance->needsApproval($class)) {
@@ -72,7 +72,7 @@ class TransferController extends Controller
                     $data['share_class_id'], $data['seller_id'], $data['buyer_id'],
                     $data['quantity'], $data['transfer_date'], $reference, $deadline
                 );
-                \App\flash('success', 'Transfer recorded, pending approval (approval / pre-emption right until ' . $deadline . ').');
+                \App\flash('success', __('Transfer recorded, pending approval (approval / pre-emption right until :deadline).', ['deadline' => $deadline]));
                 redirect('/transfers');
             }
             (new ShareService())->transfer(
@@ -83,7 +83,7 @@ class TransferController extends Controller
                 $data['transfer_date'],
                 $reference
             );
-            \App\flash('success', 'Transfer recorded.');
+            \App\flash('success', __('Transfer recorded.'));
             redirect('/transfers');
         } catch (\InvalidArgumentException $e) {
             \App\flash('error', $e->getMessage());
@@ -96,7 +96,7 @@ class TransferController extends Controller
         Csrf::verify();
         try {
             (new ShareService())->approveTransfer($id, Request::str('approval_date', date('Y-m-d')), Request::str('notary_reference'));
-            \App\flash('success', 'Transfer approved: movement recorded in the register.');
+            \App\flash('success', __('Transfer approved: movement recorded in the register.'));
         } catch (\InvalidArgumentException $e) {
             \App\flash('error', $e->getMessage());
         }
@@ -107,7 +107,7 @@ class TransferController extends Controller
     {
         Csrf::verify();
         (new ShareService())->rejectTransfer($id);
-        \App\flash('success', 'Transfer rejected.');
+        \App\flash('success', __('Transfer rejected.'));
         redirect('/transfers');
     }
 }

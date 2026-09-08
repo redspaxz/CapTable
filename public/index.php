@@ -23,5 +23,6 @@ if ($isHttps) {
 }
 
 $app = new App(BASE_PATH . '/config/config.php');
+\App\Core\Lang::init();
 $app->loadRoutes();
 $app->run();

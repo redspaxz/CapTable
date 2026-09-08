@@ -15,6 +15,7 @@ class View
             'content' => $content,
             'title' => $data['title'] ?? 'CapTable',
             'flash' => $flash,
+            'charts' => !empty($data['charts']),
         ]);
     }
 

@@ -42,13 +42,13 @@ class ShareService
     public function transfer(int $classId, int $sellerId, int $buyerId, int $quantity, string $date, string $deedReference): void
     {
         if ($sellerId === $buyerId) {
-            throw new \InvalidArgumentException('The seller and the buyer cannot be the same person.');
+            throw new \InvalidArgumentException(__('The seller and the buyer cannot be the same person.'));
         }
         Database::transaction(function () use ($classId, $sellerId, $buyerId, $quantity, $date, $deedReference) {
             $available = $this->ownership->holding($sellerId, $classId);
             if ($available < $quantity) {
                 throw new \InvalidArgumentException(
-                    "Insufficient shares: the seller holds only {$available} share(s) in this class."
+                    __('Insufficient shares: the seller holds only :available share(s) in this class.', ['available' => $available])
                 );
             }
             Database::execute(
@@ -85,7 +85,7 @@ class ShareService
         $available = $this->ownership->holding($sellerId, $classId);
         if ($available < $quantity) {
             throw new \InvalidArgumentException(
-                "Insufficient shares: the seller holds only {$available} share(s) in this class."
+                __('Insufficient shares: the seller holds only :available share(s) in this class.', ['available' => $available])
             );
         }
         Database::execute(
@@ -105,16 +105,16 @@ class ShareService
         Database::transaction(function () use ($transferId, $approvalDate, $notaryReference) {
             $transfer = Database::one('SELECT * FROM share_transfers WHERE id = ?', [$transferId]);
             if (!$transfer || $transfer['status'] !== 'pending') {
-                throw new \InvalidArgumentException('Transfer not found or already processed.');
+                throw new \InvalidArgumentException(__('Transfer not found or already processed.'));
             }
             $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$transfer['share_class_id']]);
             $compliance = new \App\Modules\Compliance\ComplianceService();
             if ($compliance->isBlocked($class, $approvalDate)) {
-                throw new \InvalidArgumentException('Transfer still subject to lock-up (inalienability).');
+                throw new \InvalidArgumentException(__('Transfer still subject to lock-up (inalienability).'));
             }
             $available = $this->ownership->holding((int) $transfer['seller_id'], (int) $transfer['share_class_id']);
             if ($available < (int) $transfer['quantity']) {
-                throw new \InvalidArgumentException("Insufficient shares: {$available} available.");
+                throw new \InvalidArgumentException(__('Insufficient shares: :available available.', ['available' => $available]));
             }
             Database::execute(
                 'INSERT INTO share_movements (movement_type, share_class_id, shareholder_id, counterparty_id, quantity, movement_date, reference, notary_reference, created_by)

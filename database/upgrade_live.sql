@@ -11,6 +11,7 @@ ALTER TABLE settings ADD COLUMN fmv_per_share BIGINT UNSIGNED NULL;
 ALTER TABLE settings ADD COLUMN secondary_currency VARCHAR(8) NULL;
 ALTER TABLE settings ADD COLUMN fx_rate DECIMAL(12,6) NOT NULL DEFAULT 1.0;
 ALTER TABLE settings ADD COLUMN option_tax_rate DECIMAL(5,4) NOT NULL DEFAULT 0.30;
+ALTER TABLE settings ADD COLUMN default_language VARCHAR(5) NOT NULL DEFAULT 'en';
 
 ALTER TABLE share_classes ADD COLUMN liquidation_multiplier DECIMAL(5,2) NOT NULL DEFAULT 1.00;
 ALTER TABLE share_classes ADD COLUMN liquidation_priority INT NOT NULL DEFAULT 100;

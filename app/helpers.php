@@ -10,6 +10,12 @@ function e(mixed $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+/** Translate an English source string into the active UI language. */
+function __(string $key, array $replace = []): string
+{
+    return \App\Core\Lang::t($key, $replace);
+}
+
 /** Build an absolute app URL from a path. */
 function url(string $path = '/'): string
 {

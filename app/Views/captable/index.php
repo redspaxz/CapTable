@@ -1,21 +1,21 @@
 <?php use function App\{e, url, money, shares, pct}; ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
-    <h1 class="h4 mb-0">Capital breakdown</h1>
+    <h1 class="h4 mb-0"><?= __('Capital breakdown') ?></h1>
     <div class="text-muted"><?= e($company['name'] ?? '') ?> — RCCM <?= e($company['rccm'] ?? '—') ?></div>
   </div>
   <div>
-    <button class="btn btn-outline-dark" onclick="window.print()" data-bs-toggle="tooltip" data-bs-title="Print the breakdown">🖨 Print</button>
-    <a class="btn btn-outline-primary" href="<?= url('/captable/history') ?>"><i class="bi bi-clock-history me-1"></i>History</a>
-    <a class="btn btn-outline-primary" href="<?= url('/waterfall') ?>"><i class="bi bi-water me-1"></i>Waterfall</a>
-    <a class="btn btn-outline-success" href="<?= url('/captable/export.csv') ?>" data-bs-toggle="tooltip" data-bs-title="Download as CSV (; separator)">⬇ Export CSV</a>
+    <button class="btn btn-outline-dark" onclick="window.print()" data-bs-toggle="tooltip" data-bs-title="<?= __('Print the breakdown') ?>">🖨 <?= __('Print') ?></button>
+    <a class="btn btn-outline-primary" href="<?= url('/captable/history') ?>"><i class="bi bi-clock-history me-1"></i><?= __('History') ?></a>
+    <a class="btn btn-outline-primary" href="<?= url('/waterfall') ?>"><i class="bi bi-water me-1"></i><?= __('Waterfall') ?></a>
+    <a class="btn btn-outline-success" href="<?= url('/captable/export.csv') ?>" data-bs-toggle="tooltip" data-bs-title="<?= __('Download as CSV (; separator)') ?>">⬇ <?= __('Export CSV') ?></a>
   </div>
 </div>
 
 <div class="row g-3">
   <div class="col-lg-8">
     <table class="table table-hover bg-white shadow-sm">
-      <thead class="table-dark"><tr><th>Shareholder</th><th>Class</th><th class="text-end">Shares</th><th class="text-end">Par value</th><th class="text-end">%</th></tr></thead>
+      <thead class="table-dark"><tr><th><?= __('Shareholder') ?></th><th><?= __('Class') ?></th><th class="text-end"><?= __('Shares') ?></th><th class="text-end"><?= __('Par value') ?></th><th class="text-end">%</th></tr></thead>
       <tbody>
         <?php foreach ($holdings as $h): $i = 0; foreach ($h['rows'] as $row): $i++; ?>
         <tr>
@@ -28,16 +28,16 @@
         <?php endforeach; endforeach; ?>
       </tbody>
       <tfoot class="table-light fw-bold">
-        <tr><td colspan="2">Total</td><td class="text-end"><?= shares($totalShares) ?></td><td class="text-end"><?= money($totalCapital) ?></td><td class="text-end">100 %</td></tr>
+        <tr><td colspan="2"><?= __('Total') ?></td><td class="text-end"><?= shares($totalShares) ?></td><td class="text-end"><?= money($totalCapital) ?></td><td class="text-end">100 %</td></tr>
         <?php if (!empty($company['secondary_currency']) && (float) $company['fx_rate'] > 0): ?>
         <tr class="small"><td colspan="4" class="text-end text-muted">≈ <?= number_format($totalCapital / (float) $company['fx_rate'], 0, ',', ' ') ?> <?= e($company['secondary_currency']) ?></td><td></td></tr>
         <?php endif; ?>
       </tfoot>
     </table>
 
-    <h2 class="h6 mt-4">By share class</h2>
+    <h2 class="h6 mt-4"><?= __('By share class') ?></h2>
     <table class="table table-sm bg-white shadow-sm">
-      <thead><tr><th>Class</th><th class="text-end">Shares</th><th class="text-end">Total par value</th></tr></thead>
+      <thead><tr><th><?= __('Class') ?></th><th class="text-end"><?= __('Shares') ?></th><th class="text-end"><?= __('Total par value') ?></th></tr></thead>
       <tbody>
         <?php foreach ($byClass as $row): ?>
         <tr><td><?= e($row['class']['code']) ?> — <?= e($row['class']['name']) ?></td>
@@ -49,7 +49,7 @@
   </div>
   <div class="col-lg-4">
     <div class="card bg-white shadow-sm"><div class="card-body">
-      <h2 class="h6 fw-bold">Ownership chart</h2>
+      <h2 class="h6 fw-bold"><?= __('Ownership chart') ?></h2>
       <canvas id="capChart" height="260"></canvas>
     </div></div>
   </div>

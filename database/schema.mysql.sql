@@ -177,6 +177,7 @@ CREATE TABLE IF NOT EXISTS option_exercises (
 ALTER TABLE settings ADD COLUMN secondary_currency VARCHAR(8) NULL;
 ALTER TABLE settings ADD COLUMN fx_rate DECIMAL(12,6) NOT NULL DEFAULT 1.0;
 ALTER TABLE settings ADD COLUMN option_tax_rate DECIMAL(5,4) NOT NULL DEFAULT 0.30;
+ALTER TABLE settings ADD COLUMN default_language VARCHAR(5) NOT NULL DEFAULT 'en';
 
 ALTER TABLE share_classes ADD COLUMN category VARCHAR(20) NOT NULL DEFAULT 'ordinary';
 ALTER TABLE share_classes ADD COLUMN voting_weight INT NOT NULL DEFAULT 1;

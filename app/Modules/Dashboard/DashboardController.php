@@ -23,12 +23,14 @@ class DashboardController extends Controller
         $holdings = $this->ownership->byShareholder();
         return $this->view('dashboard/index', [
             'title' => 'Dashboard',
+            'charts' => true,
             'company' => $company,
             'totalShares' => $this->ownership->totalShares(),
             'totalCapital' => $this->ownership->totalCapital(),
             'shareholderCount' => (int) Database::scalar('SELECT COUNT(*) FROM shareholders'),
             'movementCount' => (int) Database::scalar('SELECT COUNT(*) FROM share_movements'),
             'topHolders' => array_slice($holdings, 0, 6),
+            'capitalTimeline' => $this->capitalTimeline(),
             'recentMovements' => Database::all(
                 'SELECT m.*, s.name AS shareholder_name, c.code AS class_code
                  FROM share_movements m
@@ -37,5 +39,31 @@ class DashboardController extends Controller
                  ORDER BY m.movement_date DESC, m.id DESC LIMIT 6'
             ),
         ]);
+    }
+
+    /**
+     * Cumulative issued capital (XAF) per movement date — issuances add
+     * qty × par value; transfers leave the total unchanged.
+     * @return array{labels: string[], values: int[]}
+     */
+    private function capitalTimeline(): array
+    {
+        $rows = Database::all(
+            'SELECT m.movement_date AS d,
+                    SUM(CASE WHEN m.movement_type = "issuance" THEN m.quantity ELSE 0 END * c.nominal_value) AS cap
+             FROM share_movements m
+             JOIN share_classes c ON c.id = m.share_class_id
+             GROUP BY m.movement_date
+             ORDER BY m.movement_date'
+        );
+        $labels = [];
+        $values = [];
+        $cumulative = 0;
+        foreach ($rows as $row) {
+            $cumulative += (int) $row['cap'];
+            $labels[] = (string) $row['d'];
+            $values[] = $cumulative;
+        }
+        return ['labels' => $labels, 'values' => $values];
     }
 }

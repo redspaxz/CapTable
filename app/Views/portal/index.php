@@ -1,32 +1,32 @@
 <?php use function App\{e, url, shares, money, pct}; use App\Core\Auth;
-$roleLabels = ['founder' => 'Founder', 'investor' => 'Investor', 'board' => 'Board member', 'employee' => 'Employee']; ?>
+$roleLabels = ['founder' => __('Founder'), 'investor' => __('Investor'), 'board' => __('Board member'), 'employee' => __('Employee')]; ?>
 <header class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
   <div>
-    <h1 class="h4 mb-1 fw-bold">My space <span class="fs-6 text-muted fw-normal"><?= e(Auth::user()['name'] ?? '') ?></span></h1>
+    <h1 class="h4 mb-1 fw-bold"><?= __('My space') ?> <span class="fs-6 text-muted fw-normal"><?= e(Auth::user()['name'] ?? '') ?></span></h1>
     <?php if ($stakeholderRole !== null): ?>
       <span class="badge text-bg-primary"><i class="bi bi-person-badge me-1"></i><?= e($roleLabels[$stakeholderRole] ?? $stakeholderRole) ?></span>
     <?php endif; ?>
   </div>
   <div class="text-end">
     <div class="text-muted small"><?= e($company['name'] ?? '') ?></div>
-    <div class="fw-bold"><?= shares($totalShares) ?> shares · <?= money($totalCapital) ?></div>
+    <div class="fw-bold"><?= shares($totalShares) ?> <?= __('shares') ?> · <?= money($totalCapital) ?></div>
   </div>
 </header>
 
 <?php if ($myHolding === null && $myGrants === []): ?>
 <div class="alert alert-info">
-  Your account is not yet linked to a shareholder or option beneficiary profile.
-  Contact the administrator to associate your account with your file.
+  <?= __('Your account is not yet linked to a shareholder or option beneficiary profile.') ?>
+  <?= __('Contact the administrator to associate your account with your file.') ?>
 </div>
 <?php endif; ?>
 
 <div class="row g-3 mb-4">
   <?php
   $cards = [
-      ['Shares held', $myHolding !== null ? shares($myHolding['total']) : '—', 'bi-pie-chart-fill', 'primary'],
-      ['Ownership share', $myHolding !== null ? pct($myHolding['percentage']) : '—', 'bi-percent', 'info'],
-      ['Vested options', shares($vestedTotal), 'bi-graph-up-arrow', 'success'],
-      ['Vested value (est.)', money($vestedValue), 'bi-cash-coin', 'warning'],
+      [__('Shares held'), $myHolding !== null ? shares($myHolding['total']) : '—', 'bi-pie-chart-fill', 'primary'],
+      [__('Ownership share'), $myHolding !== null ? pct($myHolding['percentage']) : '—', 'bi-percent', 'info'],
+      [__('Vested options'), shares($vestedTotal), 'bi-graph-up-arrow', 'success'],
+      [__('Vested value (est.)'), money($vestedValue), 'bi-cash-coin', 'warning'],
   ];
   foreach ($cards as [$label, $value, $icon, $color]): ?>
   <div class="col-6 col-xl-3">
@@ -44,20 +44,20 @@ $roleLabels = ['founder' => 'Founder', 'investor' => 'Investor', 'board' => 'Boa
   <section class="col-lg-6">
     <div class="card h-100">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-pie-chart me-2"></i>My shares</span>
-        <span class="text-muted small"><?= (int) $myHolding['certificates'] ?> certificate(s)</span>
+        <span><i class="bi bi-pie-chart me-2"></i><?= __('My shares') ?></span>
+        <span class="text-muted small"><?= (int) $myHolding['certificates'] ?> <?= __('certificate(s)') ?></span>
       </div>
       <table class="table table-sm mb-0">
-        <thead><tr><th>Class</th><th class="text-end">Shares</th><th class="text-end">Par value</th></tr></thead>
+        <thead><tr><th><?= __('Class') ?></th><th class="text-end"><?= __('Shares') ?></th><th class="text-end"><?= __('Par value') ?></th></tr></thead>
         <tbody>
           <?php foreach ($myHolding['rows'] as $row): ?>
           <tr><td><span class="badge bg-secondary"><?= e($row['class']['code']) ?></span> <?= e($row['class']['name']) ?></td>
               <td class="text-end"><?= shares($row['quantity']) ?></td>
               <td class="text-end"><?= money($row['value']) ?></td></tr>
           <?php endforeach; ?>
-          <?php if ($myHolding['rows'] === []): ?><tr><td colspan="3" class="text-muted">No shares to date.</td></tr><?php endif; ?>
+          <?php if ($myHolding['rows'] === []): ?><tr><td colspan="3" class="text-muted"><?= __('No shares to date.') ?></td></tr><?php endif; ?>
         </tbody>
-        <tfoot class="table-light fw-bold"><tr><td>Total</td><td class="text-end"><?= shares($myHolding['total']) ?></td><td class="text-end"><?= pct($myHolding['percentage']) ?></td></tr></tfoot>
+        <tfoot class="table-light fw-bold"><tr><td><?= __('Total') ?></td><td class="text-end"><?= shares($myHolding['total']) ?></td><td class="text-end"><?= pct($myHolding['percentage']) ?></td></tr></tfoot>
       </table>
     </div>
   </section>
@@ -66,9 +66,9 @@ $roleLabels = ['founder' => 'Founder', 'investor' => 'Investor', 'board' => 'Boa
   <?php if ($myGrants !== []): ?>
   <section class="col-lg-6">
     <div class="card h-100">
-      <div class="card-header"><i class="bi bi-award me-2"></i>My options</div>
+      <div class="card-header"><i class="bi bi-award me-2"></i><?= __('My options') ?></div>
       <table class="table table-sm mb-0">
-        <thead><tr><th>Grant</th><th class="text-end">Granted</th><th class="text-end">Vested</th><th class="text-end">Exercisable</th><th class="text-end">Exercised</th></tr></thead>
+        <thead><tr><th><?= __('Grant') ?></th><th class="text-end"><?= __('Granted') ?></th><th class="text-end"><?= __('Vested') ?></th><th class="text-end"><?= __('Exercisable') ?></th><th class="text-end"><?= __('Exercised') ?></th></tr></thead>
         <tbody>
           <?php foreach ($myGrants as $g): ?>
           <tr>
@@ -81,13 +81,13 @@ $roleLabels = ['founder' => 'Founder', 'investor' => 'Investor', 'board' => 'Boa
           </tr>
           <?php endforeach; ?>
         </tbody>
-        <tfoot class="table-light fw-bold"><tr><td>Total</td>
+        <tfoot class="table-light fw-bold"><tr><td><?= __('Total') ?></td>
           <td class="text-end"><?= shares(array_sum(array_map(fn($g) => (int) $g['quantity'], $myGrants))) ?></td>
           <td class="text-end"><?= shares((int) $vestedTotal) ?></td><td></td>
           <td class="text-end"><?= shares((int) $exercisedTotal) ?></td></tr></tfoot>
       </table>
       <div class="card-footer text-muted small">
-        Reference price: <?= money($referencePrice) ?> / share · strike per grant.
+        <?= __('Reference price:') ?> <?= money($referencePrice) ?> / <?= __('share · strike per grant.') ?>
       </div>
     </div>
   </section>
