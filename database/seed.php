@@ -26,6 +26,10 @@ if ($driver === 'sqlite') {
     }
 }
 
+// Multi-tenant seeding: everything below the demo block belongs to
+// tenant 1; the CLI has no session, so force the tenant context.
+\App\Core\Tenancy::setForced(1);
+
 Database::execute('DELETE FROM share_movements');
 Database::execute('DELETE FROM share_holdings');
 Database::execute('DELETE FROM share_issuances');
@@ -36,6 +40,11 @@ Database::execute('DELETE FROM shareholders');
 Database::execute('DELETE FROM share_classes');
 Database::execute('DELETE FROM users');
 Database::execute('DELETE FROM settings');
+Database::execute('DELETE FROM tenants WHERE id > 1');
+Database::execute('DELETE FROM beneficial_owners');
+Database::execute('DELETE FROM convertibles');
+Database::execute('DELETE FROM option_grants');
+Database::execute('DELETE FROM option_exercises');
 if ($driver === 'sqlite') {
     Database::execute('DELETE FROM sqlite_sequence');
 }
@@ -128,4 +137,75 @@ Database::execute(
     ['Commissaire aux Comptes', 'auditor@ttechgroup.cm', password_hash('password', PASSWORD_DEFAULT), 'auditor', 'board']
 );
 
-echo "Seed OK — admin@ttechgroup.cm / password\n";
+// Multi-tenancy: the demo above belongs to tenant 1 (default column value).
+// Add the global super-admin, then a second company to prove isolation.
+\App\Core\Tenancy::setForced(1);
+
+Database::execute(
+    'INSERT INTO users (name, email, password_hash, role, tenant_id) VALUES (?,?,?,?,NULL)',
+    ['Super Admin', 'super@ttechgroup.cm', password_hash('password', PASSWORD_DEFAULT), 'superadmin']
+);
+
+Database::execute('INSERT INTO tenants (id, name) VALUES (2, ?)', ['Ngoola Ventures SARL']);
+$tenant2 = (int) Database::lastId();
+$tenant2 = 2;
+Database::execute(
+    'INSERT INTO settings (tenant_id, company_name, legal_form, rccm, head_office) VALUES (?,?,?,?,?)',
+    [$tenant2, 'Ngoola Ventures SARL', 'SARL', 'CM/DLA/2026/B/1234', 'Douala']
+);
+Database::execute(
+    'INSERT INTO users (name, email, password_hash, role, tenant_id) VALUES (?,?,?,?,?)',
+    ['Admin Ngoola', 'admin2@ttechgroup.cm', password_hash('password', PASSWORD_DEFAULT), 'admin', $tenant2]
+);
+Database::execute(
+    'INSERT INTO share_classes (id, code, name, nominal_value, shares_authorized, rights, tenant_id) VALUES (?,?,?,?,?,?,?)',
+    [901, 'ORD', 'Parts sociales ordinaires', 5000, 100000, 'Parts sociales - SARL', $tenant2]
+);
+$class2 = 901;
+Database::execute(
+    'INSERT INTO shareholders (id, type, name, id_type, id_number, email, tenant_id) VALUES (?,?,?,?,?,?,?)',
+    [901, 'individual', 'Aicha Bello', 'CNI', 'NG-001', 'aicha@ngoola.cm', $tenant2]
+);
+$shA = 901;
+Database::execute(
+    'INSERT INTO shareholders (id, type, name, id_type, id_number, email, tenant_id) VALUES (?,?,?,?,?,?,?)',
+    [902, 'individual', 'Ibrahim Sali', 'CNI', 'NG-002', 'ibrahim@ngoola.cm', $tenant2]
+);
+$shB = 902;
+Database::execute(
+    'INSERT INTO share_issuances (id, share_class_id, shareholder_id, quantity, apport_type, issuance_date, reference, tenant_id) VALUES (?,?,?,?,?,?,?,?)',
+    [901, $class2, $shA, 1000, 'cash', '2026-01-10', 'AG-2026-001', $tenant2]
+);
+Database::execute(
+    'INSERT INTO share_movements (id, movement_type, share_class_id, shareholder_id, counterparty_id, quantity, movement_date, reference, tenant_id) VALUES (?,"issuance",?,?,NULL,?,?,?,?)',
+    [901, $class2, $shA, 1000, '2026-01-10', 'AG-2026-001', $tenant2]
+);
+Database::execute(
+    'INSERT INTO share_issuances (id, share_class_id, shareholder_id, quantity, apport_type, issuance_date, reference, tenant_id) VALUES (?,?,?,?,?,?,?,?)',
+    [902, $class2, $shB, 600, 'cash', '2026-01-10', 'AG-2026-002', $tenant2]
+);
+Database::execute(
+    'INSERT INTO share_movements (id, movement_type, share_class_id, shareholder_id, counterparty_id, quantity, movement_date, reference, tenant_id) VALUES (?,"issuance",?,?,NULL,?,?,?,?)',
+    [902, $class2, $shB, 600, '2026-01-10', 'AG-2026-002', $tenant2]
+);
+Database::execute(
+    'INSERT INTO share_holdings (shareholder_id, share_class_id, quantity, tenant_id) VALUES (?,?,?,?)',
+    [$shA, $class2, 1000, $tenant2]
+);
+Database::execute(
+    'INSERT INTO share_holdings (shareholder_id, share_class_id, quantity, tenant_id) VALUES (?,?,?,?)',
+    [$shB, $class2, 600, $tenant2]
+);
+
+// Tenant-2 rows use high explicit ids (901+) so the T&Tech ids UAT relies on
+// stay stable; on SQLite, rewind the AUTOINCREMENT sequences to the tenant-1
+// max so later app-created T&Tech rows keep their historical numbering.
+if ($driver === 'sqlite') {
+    foreach (['share_classes', 'shareholders', 'share_issuances', 'share_movements', 'share_holdings'] as $seqTable) {
+        Database::execute(
+            'UPDATE sqlite_sequence SET seq = (SELECT COALESCE(MAX(id), 0) FROM ' . $seqTable . ' WHERE tenant_id = 1) WHERE name = ?',
+            [$seqTable]
+        );
+    }
+}
+echo "Seed OK - admin@ttechgroup.cm / password - admin2@ttechgroup.cm / password (Ngoola) - super@ttechgroup.cm / password\n";

@@ -13,6 +13,9 @@ class Auth
             Session::set('user_id', (int) $user['id']);
             Session::set('user_name', $user['name']);
             Session::set('user_role', $user['role']);
+            // Active company: the user's own tenant, or none yet for the
+            // global super-admin (they pick one from the company list).
+            Session::set('tenant_id', $user['tenant_id'] !== null ? (int) $user['tenant_id'] : null);
             session_regenerate_id(true);
             return true;
         }
@@ -55,14 +58,26 @@ class Auth
         }
     }
 
-    /** Middleware: require one of the given roles. */
+    /** Middleware: require one of the given roles (super-admin always passes). */
     public static function requireRole(string ...$roles): void
     {
         self::requireLogin();
-        if (!in_array(self::role(), $roles, true)) {
+        if (self::role() !== 'superadmin' && !in_array(self::role(), $roles, true)) {
             http_response_code(403);
             echo View::render('errors/403', ['title' => 'Access denied']);
             exit;
         }
+    }
+
+    /** Write-tier check for views: hide buttons from read-only roles. */
+    public static function canWrite(): bool
+    {
+        return in_array(self::role(), ['superadmin', 'admin', 'finance'], true);
+    }
+
+    /** Global platform administrator. */
+    public static function isSuperAdmin(): bool
+    {
+        return self::role() === 'superadmin';
     }
 }

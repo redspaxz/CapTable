@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Options;
 
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Modules\Shares\ShareService;
 
 /**
@@ -34,14 +35,14 @@ class OptionService
         if ($cliffMonths < 0 || $cliffMonths > $vestMonths) {
             throw new \InvalidArgumentException(__('The cliff must be between 0 and the vesting duration.'));
         }
-        $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$classId]);
+        $class = Database::one('SELECT * FROM share_classes WHERE id = ? AND tenant_id = ?', [$classId, Tenancy::idOrFail()]);
         if (!$class) {
             throw new \InvalidArgumentException(__('Unknown share class.'));
         }
         Database::execute(
-            'INSERT INTO option_grants (shareholder_id, share_class_id, quantity, strike_price, granted_at, vest_months, cliff_months, notes)
-             VALUES (?,?,?,?,?,?,?,?)',
-            [$beneficiaryId, $classId, $quantity, $strikePrice, $grantedAt, $vestMonths, $cliffMonths, $notes]
+            'INSERT INTO option_grants (shareholder_id, share_class_id, quantity, strike_price, granted_at, vest_months, cliff_months, notes, tenant_id)
+             VALUES (?,?,?,?,?,?,?,?,?)',
+            [$beneficiaryId, $classId, $quantity, $strikePrice, $grantedAt, $vestMonths, $cliffMonths, $notes, Tenancy::idOrFail()]
         );
         return Database::lastId();
     }
@@ -105,7 +106,7 @@ class OptionService
         if ($quantity <= 0) {
             throw new \InvalidArgumentException(__('Invalid exercise quantity.'));
         }
-        $grant = Database::one('SELECT * FROM option_grants WHERE id = ?', [$grantId]);
+        $grant = Database::one('SELECT * FROM option_grants WHERE id = ? AND tenant_id = ?', [$grantId, Tenancy::idOrFail()]);
         if (!$grant) {
             throw new \InvalidArgumentException(__('Grant not found.'));
         }
@@ -128,13 +129,13 @@ class OptionService
                 $reference
             );
             Database::execute(
-                'INSERT INTO option_exercises (grant_id, quantity, exercise_date, reference, share_issuance_id, created_by)
-                 VALUES (?,?,?,?,?,?)',
-                [$grant['id'], $quantity, $date, $reference, $issuanceId, \App\Core\Auth::user()['id'] ?? null]
+                'INSERT INTO option_exercises (grant_id, quantity, exercise_date, reference, share_issuance_id, created_by, tenant_id)
+                 VALUES (?,?,?,?,?,?,?)',
+                [$grant['id'], $quantity, $date, $reference, $issuanceId, \App\Core\Auth::user()['id'] ?? null, \App\Core\Tenancy::idOrFail()]
             );
             Database::execute(
-                'UPDATE option_grants SET exercised_qty = exercised_qty + ? WHERE id = ?',
-                [$quantity, $grant['id']]
+                'UPDATE option_grants SET exercised_qty = exercised_qty + ? WHERE id = ? AND tenant_id = ?',
+                [$quantity, $grant['id'], Tenancy::idOrFail()]
             );
             return $issuanceId;
         });
@@ -146,10 +147,11 @@ class OptionService
         $sql = 'SELECT g.*, s.name AS beneficiary, c.code AS class_code, c.nominal_value
                 FROM option_grants g
                 JOIN shareholders s ON s.id = g.shareholder_id
-                JOIN share_classes c ON c.id = g.share_class_id';
-        $params = [];
+                JOIN share_classes c ON c.id = g.share_class_id
+                WHERE g.tenant_id = ?';
+        $params = [Tenancy::idOrFail()];
         if ($shareholderId !== null) {
-            $sql .= ' WHERE g.shareholder_id = ?';
+            $sql .= ' AND g.shareholder_id = ?';
             $params[] = $shareholderId;
         }
         $sql .= ' ORDER BY g.granted_at DESC, g.id DESC';
@@ -168,7 +170,7 @@ class OptionService
         if ($fmv !== null && (int) $fmv > 0) {
             return (int) $fmv;
         }
-        return (int) (Database::scalar('SELECT MIN(nominal_value) FROM share_classes WHERE id IN (SELECT DISTINCT share_class_id FROM share_movements)') ?: 0);
+        return (int) (Database::scalar('SELECT MIN(nominal_value) FROM share_classes WHERE tenant_id = ? AND id IN (SELECT DISTINCT share_class_id FROM share_movements WHERE tenant_id = ?)', [Tenancy::idOrFail(), Tenancy::idOrFail()]) ?: 0);
     }
 
     /** Vested value = vested x (reference price - strike), floored at 0. */

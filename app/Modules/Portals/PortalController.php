@@ -7,6 +7,7 @@ namespace App\Modules\Portals;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Modules\CapTable\OwnershipService;
 use App\Modules\Options\OptionService;
 
@@ -30,11 +31,11 @@ class PortalController extends Controller
 
         $myHolding = null;
         if ($shareholderId !== null) {
-            $shareholder = Database::one('SELECT * FROM shareholders WHERE id = ?', [$shareholderId]);
+            $shareholder = Database::one('SELECT * FROM shareholders WHERE id = ? AND tenant_id = ?', [$shareholderId, \App\Core\Tenancy::idOrFail()]);
             if ($shareholder) {
                 $rows = [];
                 $myTotal = 0;
-                foreach (Database::all('SELECT * FROM share_classes ORDER BY code') as $class) {
+                foreach (Database::all('SELECT * FROM share_classes WHERE tenant_id = ? ORDER BY code', [\App\Core\Tenancy::idOrFail()]) as $class) {
                     $qty = $ownership->holding((int) $shareholderId, (int) $class['id']);
                     if ($qty > 0) {
                         $rows[] = [
@@ -51,8 +52,8 @@ class PortalController extends Controller
                     'total' => $myTotal,
                     'percentage' => $totalShares > 0 ? $myTotal / $totalShares * 100 : 0.0,
                     'certificates' => (int) Database::scalar(
-                        'SELECT COUNT(*) FROM share_certificates WHERE shareholder_id = ?',
-                        [$shareholderId]
+                        'SELECT COUNT(*) FROM share_certificates WHERE shareholder_id = ? AND tenant_id = ?',
+                        [$shareholderId, \App\Core\Tenancy::idOrFail()]
                     ),
                 ];
             }
@@ -75,7 +76,7 @@ class PortalController extends Controller
             'company' => \App\company(),
             'totalShares' => $totalShares,
             'totalCapital' => $ownership->totalCapital(),
-            'shareholderCount' => (int) Database::scalar('SELECT COUNT(*) FROM shareholders'),
+            'shareholderCount' => (int) Database::scalar('SELECT COUNT(*) FROM shareholders WHERE tenant_id = ?', [\App\Core\Tenancy::idOrFail()]),
         ]);
     }
 }

@@ -25,7 +25,7 @@
         <?php endif; ?>
       </td>
       <td>
-        <?php if ($t['status'] === 'pending' && in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+        <?php if ($t['status'] === 'pending' && Auth::canWrite()): ?>
         <form method="post" action="<?= url('/transfers/' . $t['id'] . '/approve') ?>" class="d-inline">
           <?= App\Core\Csrf::field() ?>
           <input type="hidden" name="approval_date" value="<?= date('Y-m-d') ?>">

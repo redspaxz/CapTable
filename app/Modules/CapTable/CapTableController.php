@@ -6,6 +6,7 @@ namespace App\Modules\CapTable;
 
 use App\Core\Controller;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Core\Request;
 
 class CapTableController extends Controller
@@ -93,9 +94,9 @@ class CapTableController extends Controller
                  LEFT JOIN shareholders s ON s.id = m.shareholder_id
                  LEFT JOIN shareholders cp ON cp.id = m.counterparty_id
                  LEFT JOIN share_classes c ON c.id = m.share_class_id
-                 WHERE m.movement_date <= ?
+                 WHERE m.movement_date <= ? AND m.tenant_id = ?
                  ORDER BY m.movement_date DESC, m.id DESC LIMIT 200',
-                [$asOf]
+                [$asOf, \App\Core\Tenancy::idOrFail()]
             ),
         ]);
     }
@@ -103,7 +104,7 @@ class CapTableController extends Controller
     public function register(): string
     {
         $perPage = 50;
-        $total = (int) Database::scalar('SELECT COUNT(*) FROM share_movements');
+        $total = (int) Database::scalar('SELECT COUNT(*) FROM share_movements WHERE tenant_id = ?', [\App\Core\Tenancy::idOrFail()]);
         $pages = max(1, (int) ceil($total / $perPage));
         $page = min(max(1, Request::int('page', 1)), $pages);
         return $this->view('register/index', [
@@ -114,8 +115,10 @@ class CapTableController extends Controller
                  LEFT JOIN shareholders s ON s.id = m.shareholder_id
                  LEFT JOIN shareholders cp ON cp.id = m.counterparty_id
                  LEFT JOIN share_classes c ON c.id = m.share_class_id
+                 WHERE m.tenant_id = ?
                  ORDER BY m.movement_date DESC, m.id DESC
-                 LIMIT ' . (int) $perPage . ' OFFSET ' . (int) (($page - 1) * $perPage)
+                 LIMIT ' . (int) $perPage . ' OFFSET ' . (int) (($page - 1) * $perPage),
+                [\App\Core\Tenancy::idOrFail()]
             ),
             'company' => \App\company(),
             'page' => $page,

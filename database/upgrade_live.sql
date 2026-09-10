@@ -106,3 +106,43 @@ CREATE TABLE IF NOT EXISTS share_holdings (
 
 UPDATE settings SET secondary_currency = 'EUR', fx_rate = 655.957,
        option_tax_rate = 0.30, fmv_per_share = 10000;
+
+-- Multi-tenancy: companies + tenant_id on every domain table.
+-- Existing production data all belongs to tenant 1 (T&Tech Consulting Group).
+CREATE TABLE IF NOT EXISTS tenants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(190) NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT INTO tenants (id, name) VALUES (1, 'T&Tech Consulting Group');
+ALTER TABLE settings ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE users ADD COLUMN tenant_id INT NULL DEFAULT 1;
+ALTER TABLE shareholders ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE share_classes ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE share_issuances ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE share_transfers ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE share_movements ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE share_holdings ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE share_certificates ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE documents ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE option_grants ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE option_exercises ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE beneficial_owners ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+ALTER TABLE convertibles ADD COLUMN tenant_id INT NOT NULL DEFAULT 1;
+UPDATE settings SET tenant_id = 1; UPDATE users SET tenant_id = 1;
+UPDATE shareholders SET tenant_id = 1; UPDATE share_classes SET tenant_id = 1;
+UPDATE share_issuances SET tenant_id = 1; UPDATE share_transfers SET tenant_id = 1;
+UPDATE share_movements SET tenant_id = 1; UPDATE share_holdings SET tenant_id = 1;
+UPDATE share_certificates SET tenant_id = 1; UPDATE documents SET tenant_id = 1;
+UPDATE option_grants SET tenant_id = 1; UPDATE option_exercises SET tenant_id = 1;
+UPDATE beneficial_owners SET tenant_id = 1; UPDATE convertibles SET tenant_id = 1;
+CREATE INDEX idx_ten_settings ON settings (tenant_id);
+CREATE INDEX idx_ten_shareholders ON shareholders (tenant_id);
+CREATE INDEX idx_ten_classes ON share_classes (tenant_id);
+CREATE INDEX idx_ten_movements ON share_movements (tenant_id);
+CREATE INDEX idx_ten_grants ON option_grants (tenant_id);
+
+-- Share-class codes are unique per company, not globally.
+ALTER TABLE share_classes DROP INDEX code;
+CREATE UNIQUE INDEX uq_class_tenant_code ON share_classes (tenant_id, code);

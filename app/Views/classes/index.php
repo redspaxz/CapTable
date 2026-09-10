@@ -14,14 +14,14 @@
           <td class="text-end"><?= shares((int) $c['shares_authorized']) ?></td>
           <td class="text-end fw-semibold"><?= shares((int) $c['outstanding']) ?></td>
           <td class="text-end">×<?= e(rtrim(rtrim((string) $c['liquidation_multiplier'], '0'), '.')) ?>
-            <small class="text-muted">(<?= __('Priority') ?> <?= (int) $c['liquidation_priority'] ?>, <?= (int) $c['participing'] === 1 ? __('participating') : __('non-participating') ?>)</small></td>
+            <small class="text-muted">(<?= __('Priority') ?> <?= (int) $c['liquidation_priority'] ?>, <?= (int) $c['participating'] === 1 ? __('participating') : __('non-participating') ?>)</small></td>
         </tr>
         <?php endforeach; ?>
         <?php if ($classes === []): ?><tr><td colspan="5" class="text-center text-muted py-4"><?= __('No share classes yet. Create one on the right.') ?></td></tr><?php endif; ?>
       </tbody>
     </table>
   </div>
-  <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+  <?php if (Auth::canWrite()): ?>
   <div class="col-lg-4">
     <div class="card bg-white shadow-sm"><div class="card-body">
       <h2 class="h6 fw-bold"><?= __('New share class') ?></h2>

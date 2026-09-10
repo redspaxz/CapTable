@@ -18,7 +18,7 @@ class AuthController extends Controller
     public function showLogin(): string
     {
         if (Auth::check()) {
-            redirect('/');
+            redirect(\App\Core\Tenancy::id() !== null ? '/' : '/tenants');
         }
         return View::render('auth/login', ['title' => 'Sign in']);
     }
@@ -35,7 +35,8 @@ class AuthController extends Controller
         if (filter_var($email, FILTER_VALIDATE_EMAIL) && Auth::attempt($email, $password)) {
             $this->clearAttempts();
             \App\flash('success', __('Welcome!'));
-            redirect('/');
+            // The global super-admin has no company of their own: land on the picker.
+            redirect(\App\Core\Tenancy::id() !== null ? '/' : '/tenants');
         }
         $this->recordAttempt();
         \App\flash('error', __('Invalid credentials.'));

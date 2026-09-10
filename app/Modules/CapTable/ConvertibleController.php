@@ -7,6 +7,7 @@ namespace App\Modules\CapTable;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Core\Request;
 use App\Core\Validator;
 
@@ -48,10 +49,10 @@ class ConvertibleController extends Controller
             redirect('/convertibles');
         }
         Database::execute(
-            'INSERT INTO convertibles (type, holder, principal_amount, currency, discount_pct, valuation_cap, issue_date, notes)
-             VALUES (?,?,?,?,?,?,?,?)',
+            'INSERT INTO convertibles (type, holder, principal_amount, currency, discount_pct, valuation_cap, issue_date, notes, tenant_id)
+             VALUES (?,?,?,?,?,?,?,?,?)',
             [$data['type'], $data['holder'], $data['principal_amount'], $data['currency'],
-             $data['discount_pct'], $data['valuation_cap'], $data['issue_date'], $data['notes']]
+             $data['discount_pct'], $data['valuation_cap'], $data['issue_date'], $data['notes'], \App\Core\Tenancy::idOrFail()]
         );
         \App\flash('success', __('Convertible instrument recorded.'));
         redirect('/convertibles');

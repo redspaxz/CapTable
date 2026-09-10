@@ -85,16 +85,19 @@ has "$R" "PREF" && has "$R" "Preferred shares" && ok "création de la catégorie
 
 # ---- T4 Émissions --------------------------------------------------------------
 echo "== T4 Émissions =="
-# Base vierge reseedée : ORD = id 1 (seed), PREF = id 2 (créé en T3).
-PREF_ID=2
+# Ids découverts dynamiquement : le seed multi-sociétés réserve des ids hauts,
+# donc aucun id de catégorie/actionnaire créé via l'UI n'est codé en dur.
+PREF_ID=$(get /transfers/new | grep -oE 'value="[0-9]+">PREF' | grep -oE '[0-9]+' | head -1)
+CNP_ID=$(get /transfers/new | grep -oE '<option value="[0-9]+">Caisse Nationale' | grep -oE '[0-9]+' | head -1)
+[ -n "$CNP_ID" ] && ok "actionnaire CNP découvert (id $CNP_ID)" || ko "actionnaire CNP introuvable"
 [ -n "$PREF_ID" ] && ok "formulaire d'émission : catégorie PREF avec valeur nominale exposée" || ko "catégorie PREF introuvable dans le formulaire"
 R=$(post /issuances /issuances/new /issuances \
-    --data-urlencode "share_class_id=$PREF_ID" --data-urlencode "shareholder_id=5" \
+    --data-urlencode "share_class_id=$PREF_ID" --data-urlencode "shareholder_id=$CNP_ID" \
     --data-urlencode "quantity=1000" --data-urlencode "apport_type=cash" \
     --data-urlencode "issuance_date=2026-09-01" --data-urlencode "reference=AG-2026-PREF")
 has "$R" "AG-2026-PREF" && has "$R" "PREF" && ok "émission de 1 000 PREF à la CNP tracée" || ko "émission PREF"
 R=$(post /issuances /issuances/new /issuances/new \
-    --data-urlencode "share_class_id=$PREF_ID" --data-urlencode "shareholder_id=5" \
+    --data-urlencode "share_class_id=$PREF_ID" --data-urlencode "shareholder_id=$CNP_ID" \
     --data-urlencode "quantity=4500" --data-urlencode "apport_type=cash" \
     --data-urlencode "issuance_date=2026-09-01")
 has "$R" "Quota exceeded" && ok "dépassement du quota autorisé bloqué (4 500 > 4 000 restants)" || ko "quota autorisé non vérifié"
@@ -104,7 +107,7 @@ echo "== T5 Cessions =="
 ORD_ID=$(get /transfers/new | grep -oE 'value="[0-9]+">ORD' | head -1 | grep -oE '[0-9]+')
 R=$(post /transfers /transfers/new /transfers \
     --data-urlencode "share_class_id=$ORD_ID" --data-urlencode "seller_id=1" \
-    --data-urlencode "buyer_id=5" --data-urlencode "quantity=500" \
+    --data-urlencode "buyer_id=$CNP_ID" --data-urlencode "quantity=500" \
     --data-urlencode "transfer_date=2026-09-02" --data-urlencode "deed_reference=ACT-UAT-001")
 has "$R" "ACT-UAT-001" && has "$R" "Caisse Nationale" && ok "cession de 500 ORD (Edmund → CNP) enregistrée" || ko "cession ORD"
 R=$(post /transfers /transfers/new /transfers/new \
@@ -184,7 +187,7 @@ post /login /login / --data-urlencode "email=admin@ttechgroup.cm" --data-urlenco
 R=$(get /options)
 has "$R" "Paul Ayissi" && has "$R" "600" && ok "plan d'options : attribution seed (600, Paul) listée" || ko "attribution seed absente"
 R=$(post /options /options/new /options \
-    --data-urlencode "shareholder_id=5" --data-urlencode "share_class_id=1" \
+    --data-urlencode "shareholder_id=$CNP_ID" --data-urlencode "share_class_id=1" \
     --data-urlencode "quantity=1000" --data-urlencode "strike_price=5000" \
     --data-urlencode "granted_at=2025-09-01" --data-urlencode "vest_months=24" \
     --data-urlencode "cliff_months=12" --data-urlencode "notes=UAT")
@@ -233,17 +236,19 @@ curl -s -b "$JAR" -c "$JAR" -X POST "$URL/classes" \
     --data-urlencode "category=ordinary" --data-urlencode "voting_weight=1" \
     --data-urlencode "requires_approval=0" --data-urlencode "lockup_until=2030-01-01" \
     --data-urlencode "_csrf=$TOKC" -o /dev/null
+AGR_ID=$(get /transfers/new | grep -oE 'value="[0-9]+">AGR' | grep -oE '[0-9]+' | head -1)
+LOCK_ID=$(get /transfers/new | grep -oE 'value="[0-9]+">LOCK' | grep -oE '[0-9]+' | head -1)
 R=$(post /issuances /issuances/new /issuances \
-    --data-urlencode "share_class_id=3" --data-urlencode "shareholder_id=1" \
+    --data-urlencode "share_class_id=$AGR_ID" --data-urlencode "shareholder_id=1" \
     --data-urlencode "quantity=100" --data-urlencode "issuance_date=2026-01-01")
 has "$R" "100" && ok "catégorie AGR (agrément) créée et émise" || ko "catégorie AGR"
 R=$(post /transfers /transfers/new /transfers/new \
-    --data-urlencode "share_class_id=4" --data-urlencode "seller_id=1" \
+    --data-urlencode "share_class_id=$LOCK_ID" --data-urlencode "seller_id=1" \
     --data-urlencode "buyer_id=3" --data-urlencode "quantity=10" \
     --data-urlencode "transfer_date=2026-09-07")
 has "$R" "Lock-up" && ok "lock-up actif : cession LOCK refusée jusqu'en 2030" || ko "lock-up non appliqué"
 R=$(post /transfers /transfers/new /transfers \
-    --data-urlencode "share_class_id=3" --data-urlencode "seller_id=1" \
+    --data-urlencode "share_class_id=$AGR_ID" --data-urlencode "seller_id=1" \
     --data-urlencode "buyer_id=3" --data-urlencode "quantity=10" \
     --data-urlencode "transfer_date=2026-09-07")
 has "$R" "pending approval" && ok "clause d'agrément : cession AGR en attente d'approbation" || ko "agrément non appliqué"
@@ -299,6 +304,39 @@ C=$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' "$URL/")
     && ok "migration : table recréée et backfillée depuis le registre" || ko "migration en échec"
 ( cd "$BASE" && DB_DRIVER=sqlite php scripts/check_holdings.php ) >/dev/null 2>&1 \
     && ok "projection re-cohérente avec le registre après migration" || ko "projection divergente après migration"
+
+# ---- T18 Multi-tenancy : isolation entre sociétés -----------------------------------------
+echo "== T18 Multi-tenancy =="
+JAR2="$(mktemp)"; JAR3="$(mktemp)"
+get2() { curl -s -b "$JAR2" -c "$JAR2" "$URL$1"; }
+TOK2=$(curl -s -c "$JAR2" "$URL/login" | grep -o 'name="_csrf" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"$//')
+C=$(curl -s -b "$JAR2" -c "$JAR2" -X POST "$URL/login"     --data-urlencode "email=admin2@ttechgroup.cm"     --data-urlencode "password=password"     --data-urlencode "_csrf=$TOK2" -o /dev/null -w '%{http_code}')
+[ "$C" = 302 ] && ok "connexion admin société 2 (Ngoola)" || ko "connexion société 2 ($C)"
+R=$(get2 /shareholders)
+if has "$R" "Aicha Bello" && ! has "$R" "Edmund Alomepe"; then ok "annuaire isolé : Ngoola seulement, pas de données T&Tech"; else ko "fuite de données entre sociétés (annuaire)"; fi
+R=$(get2 /captable)
+if has "$R" "1 600" && ! has "$R" "10 000"; then ok "cap table isolé : 1 600 titres Ngoola, pas les 10 000 T&Tech"; else ko "cap table non isolé"; fi
+R=$(curl -s -b "$JAR2" "$URL/api/holdings/1")
+echo "$R" | grep -qF '"holdings":[]' && ok "accès direct inter-société bloqué (API holdings vide)" || ko "API holdings laisse fuiter des titres"
+C=$(curl -s -b "$JAR2" -o /dev/null -w '%{http_code}' "$URL/shareholders/1/edit")
+[ "$C" = 302 ] && ok "édition directe d'une ligne d'une autre société : aucune donnée renvoyée" || ko "accès direct renvoie des données ($C)"
+# Super-admin : atterrit sur le sélecteur de sociétés puis bascule
+TOK3=$(curl -s -c "$JAR3" "$URL/login" | grep -o 'name="_csrf" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"$//')
+curl -s -b "$JAR3" -c "$JAR3" -X POST "$URL/login"     --data-urlencode "email=super@ttechgroup.cm"     --data-urlencode "password=password"     --data-urlencode "_csrf=$TOK3" -o /dev/null
+LOC=$(curl -s -b "$JAR3" -o /dev/null -w '%{redirect_url}' "$URL/")
+has "$LOC" "/tenants" && ok "super-admin : atterrit sur le sélecteur de sociétés" || ko "super-admin ne va pas sur /tenants ($LOC)"
+R=$(curl -s -b "$JAR3" "$URL/tenants")
+has "$R" "Ngoola Ventures" && has "$R" "T&amp;Tech Consulting Group" && ok "sélecteur : les deux sociétés sont listées" || ko "sélecteur incomplet"
+C=$(curl -s -b "$JAR3" -c "$JAR3" -o /dev/null -w '%{http_code}' "$URL/tenant/switch/2")
+[ "$C" = 302 ] && ok "bascule vers la société 2 acceptée" || ko "bascule refusée ($C)"
+R=$(curl -s -b "$JAR3" "$URL/")
+has "$R" "Ngoola Ventures" && ! has "$R" "Edmund Alomepe" && ok "après bascule : le dashboard sert la société 2 uniquement" || ko "bascule ineffective"
+# Onboarding d'une nouvelle société par le super-admin
+TOKN=$(curl -s -b "$JAR3" "$URL/tenants" | grep -o 'name="_csrf" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"$//')
+curl -s -b "$JAR3" -X POST "$URL/tenants"     --data-urlencode "name=UAT Newco SARL" --data-urlencode "legal_form=SARL"     --data-urlencode "admin_name=UAT Admin" --data-urlencode "admin_email=uat-newco@ttechgroup.cm"     --data-urlencode "admin_password=password123" --data-urlencode "_csrf=$TOKN" -o /dev/null
+R=$(curl -s -b "$JAR3" "$URL/tenants")
+has "$R" "UAT Newco SARL" && ok "création d'une société + compte admin (onboarding super-admin)" || ko "onboarding échoué"
+rm -f "$JAR2" "$JAR3"
 
 # ---- Bilan -------------------------------------------------------------------------------
 echo

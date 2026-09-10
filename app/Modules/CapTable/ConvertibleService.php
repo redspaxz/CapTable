@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\CapTable;
 
 use App\Core\Database;
+use App\Core\Tenancy;
 
 /**
  * Convertible securities modelling (OCA / BSA / SAFE-like): outstanding
@@ -16,7 +17,7 @@ class ConvertibleService
     /** @return array<int, array> instruments enriched with modelled shares */
     public function outstanding(): array
     {
-        $rows = Database::all("SELECT * FROM convertibles WHERE status = 'outstanding' ORDER BY issue_date");
+        $rows = Database::all("SELECT * FROM convertibles WHERE status = 'outstanding' AND tenant_id = ? ORDER BY issue_date", [Tenancy::idOrFail()]);
         $currentShares = (new OwnershipService())->totalShares();
         foreach ($rows as &$row) {
             $row['modelled_shares'] = $this->modelledShares($row, $currentShares);

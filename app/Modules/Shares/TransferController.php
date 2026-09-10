@@ -7,6 +7,7 @@ namespace App\Modules\Shares;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Core\Request;
 use App\Core\Validator;
 
@@ -22,7 +23,9 @@ class TransferController extends Controller
                  JOIN shareholders seller ON seller.id = t.seller_id
                  JOIN shareholders buyer ON buyer.id = t.buyer_id
                  JOIN share_classes c ON c.id = t.share_class_id
-                 ORDER BY t.transfer_date DESC, t.id DESC'
+                 WHERE t.tenant_id = ?
+                 ORDER BY t.transfer_date DESC, t.id DESC',
+                [\App\Core\Tenancy::idOrFail()]
             ),
         ]);
     }
@@ -31,8 +34,8 @@ class TransferController extends Controller
     {
         return $this->view('transfers/form', [
             'title' => 'New transfer',
-            'classes' => Database::all('SELECT * FROM share_classes ORDER BY code'),
-            'shareholders' => Database::all('SELECT * FROM shareholders ORDER BY name'),
+            'classes' => Database::all('SELECT * FROM share_classes WHERE tenant_id = ? ORDER BY code', [\App\Core\Tenancy::idOrFail()]),
+            'shareholders' => Database::all('SELECT * FROM shareholders WHERE tenant_id = ? ORDER BY name', [\App\Core\Tenancy::idOrFail()]),
         ]);
     }
 
@@ -54,7 +57,7 @@ class TransferController extends Controller
             \App\flash('error', __('All fields are required.'));
             redirect('/transfers/new');
         }
-        $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$data['share_class_id']]);
+        $class = Database::one('SELECT * FROM share_classes WHERE id = ? AND tenant_id = ?', [$data['share_class_id'], \App\Core\Tenancy::idOrFail()]);
         if (!$class) {
             \App\flash('error', __('Unknown share class.'));
             redirect('/transfers/new');

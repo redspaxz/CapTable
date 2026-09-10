@@ -29,7 +29,7 @@
       </table>
     </div>
 
-    <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+    <?php if (Auth::canWrite()): ?>
     <div class="card bg-white shadow-sm mt-3"><div class="card-header"><?= __('New instrument') ?></div>
       <div class="card-body">
         <form method="post" action="<?= url('/convertibles') ?>">

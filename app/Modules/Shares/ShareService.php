@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Shares;
 
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Modules\CapTable\OwnershipService;
 
 /**
@@ -22,14 +23,14 @@ class ShareService
     {
         return Database::transaction(function () use ($classId, $shareholderId, $quantity, $apportType, $date, $reference) {
             Database::execute(
-                'INSERT INTO share_issuances (share_class_id, shareholder_id, quantity, apport_type, issuance_date, reference)
-                 VALUES (?,?,?,?,?,?)',
-                [$classId, $shareholderId, $quantity, $apportType, $date, $reference]
+                'INSERT INTO share_issuances (share_class_id, shareholder_id, quantity, apport_type, issuance_date, reference, tenant_id)
+                 VALUES (?,?,?,?,?,?,?)',
+                [$classId, $shareholderId, $quantity, $apportType, $date, $reference, Tenancy::idOrFail()]
             );
             Database::execute(
-                'INSERT INTO share_movements (movement_type, share_class_id, shareholder_id, counterparty_id, quantity, movement_date, reference, created_by)
-                 VALUES ("issuance",?,?,NULL,?,?,?,?)',
-                [$classId, $shareholderId, $quantity, $date, $reference, $this->currentUserId()]
+                'INSERT INTO share_movements (movement_type, share_class_id, shareholder_id, counterparty_id, quantity, movement_date, reference, created_by, tenant_id)
+                 VALUES ("issuance",?,?,NULL,?,?,?,?,?)',
+                [$classId, $shareholderId, $quantity, $date, $reference, $this->currentUserId(), Tenancy::idOrFail()]
             );
             $this->adjustHolding($shareholderId, $classId, $quantity);
             return Database::lastId();
@@ -52,14 +53,14 @@ class ShareService
                 );
             }
             Database::execute(
-                'INSERT INTO share_transfers (share_class_id, seller_id, buyer_id, quantity, transfer_date, deed_reference)
-                 VALUES (?,?,?,?,?,?)',
-                [$classId, $sellerId, $buyerId, $quantity, $date, $deedReference]
+                'INSERT INTO share_transfers (share_class_id, seller_id, buyer_id, quantity, transfer_date, deed_reference, tenant_id)
+                 VALUES (?,?,?,?,?,?,?)',
+                [$classId, $sellerId, $buyerId, $quantity, $date, $deedReference, Tenancy::idOrFail()]
             );
             Database::execute(
-                'INSERT INTO share_movements (movement_type, share_class_id, shareholder_id, counterparty_id, quantity, movement_date, reference, created_by)
-                 VALUES ("transfer_out",?,?,?,?,?,?,?)',
-                [$classId, $sellerId, $buyerId, $quantity, $date, $deedReference, $this->currentUserId()]
+                'INSERT INTO share_movements (movement_type, share_class_id, shareholder_id, counterparty_id, quantity, movement_date, reference, created_by, tenant_id)
+                 VALUES ("transfer_out",?,?,?,?,?,?,?,?)',
+                [$classId, $sellerId, $buyerId, $quantity, $date, $deedReference, $this->currentUserId(), Tenancy::idOrFail()]
             );
             $this->adjustHolding($sellerId, $classId, -$quantity);
             $this->adjustHolding($buyerId, $classId, $quantity);
@@ -80,7 +81,7 @@ class ShareService
         string $preemptionDeadline
     ): int {
         if ($sellerId === $buyerId) {
-            throw new \InvalidArgumentException('The seller and the buyer cannot be the same person.');
+            throw new \InvalidArgumentException(__('The seller and the buyer cannot be the same person.'));
         }
         $available = $this->ownership->holding($sellerId, $classId);
         if ($available < $quantity) {
@@ -89,9 +90,9 @@ class ShareService
             );
         }
         Database::execute(
-            'INSERT INTO share_transfers (share_class_id, seller_id, buyer_id, quantity, transfer_date, deed_reference, status, preemption_deadline)
-             VALUES (?,?,?,?,?,?,?,?)',
-            [$classId, $sellerId, $buyerId, $quantity, $date, $deedReference, 'pending', $preemptionDeadline]
+            'INSERT INTO share_transfers (share_class_id, seller_id, buyer_id, quantity, transfer_date, deed_reference, status, preemption_deadline, tenant_id)
+             VALUES (?,?,?,?,?,?,?,?,?)',
+            [$classId, $sellerId, $buyerId, $quantity, $date, $deedReference, 'pending', $preemptionDeadline, Tenancy::idOrFail()]
         );
         return Database::lastId();
     }
@@ -103,11 +104,11 @@ class ShareService
     public function approveTransfer(int $transferId, string $approvalDate, string $notaryReference = ''): void
     {
         Database::transaction(function () use ($transferId, $approvalDate, $notaryReference) {
-            $transfer = Database::one('SELECT * FROM share_transfers WHERE id = ?', [$transferId]);
+            $transfer = Database::one('SELECT * FROM share_transfers WHERE id = ? AND tenant_id = ?', [$transferId, Tenancy::idOrFail()]);
             if (!$transfer || $transfer['status'] !== 'pending') {
                 throw new \InvalidArgumentException(__('Transfer not found or already processed.'));
             }
-            $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$transfer['share_class_id']]);
+            $class = Database::one('SELECT * FROM share_classes WHERE id = ? AND tenant_id = ?', [$transfer['share_class_id'], Tenancy::idOrFail()]);
             $compliance = new \App\Modules\Compliance\ComplianceService();
             if ($compliance->isBlocked($class, $approvalDate)) {
                 throw new \InvalidArgumentException(__('Transfer still subject to lock-up (inalienability).'));
@@ -117,17 +118,17 @@ class ShareService
                 throw new \InvalidArgumentException(__('Insufficient shares: :available available.', ['available' => $available]));
             }
             Database::execute(
-                'INSERT INTO share_movements (movement_type, share_class_id, shareholder_id, counterparty_id, quantity, movement_date, reference, notary_reference, created_by)
-                 VALUES ("transfer_out",?,?,?,?,?,?,?,?)',
+                'INSERT INTO share_movements (movement_type, share_class_id, shareholder_id, counterparty_id, quantity, movement_date, reference, notary_reference, created_by, tenant_id)
+                 VALUES ("transfer_out",?,?,?,?,?,?,?,?,?)',
                 [$transfer['share_class_id'], $transfer['seller_id'], $transfer['buyer_id'],
                  $transfer['quantity'], $approvalDate, $transfer['deed_reference'],
-                 $notaryReference !== '' ? $notaryReference : null, \App\Core\Auth::user()['id'] ?? null]
+                 $notaryReference !== '' ? $notaryReference : null, \App\Core\Auth::user()['id'] ?? null, Tenancy::idOrFail()]
             );
             $this->adjustHolding((int) $transfer['seller_id'], (int) $transfer['share_class_id'], -(int) $transfer['quantity']);
             $this->adjustHolding((int) $transfer['buyer_id'], (int) $transfer['share_class_id'], (int) $transfer['quantity']);
             Database::execute(
-                'UPDATE share_transfers SET status = "approved", approval_date = ?, notary_reference = ? WHERE id = ?',
-                [$approvalDate, $notaryReference !== '' ? $notaryReference : null, $transferId]
+                'UPDATE share_transfers SET status = "approved", approval_date = ?, notary_reference = ? WHERE id = ? AND tenant_id = ?',
+                [$approvalDate, $notaryReference !== '' ? $notaryReference : null, $transferId, Tenancy::idOrFail()]
             );
         });
     }
@@ -135,8 +136,8 @@ class ShareService
     public function rejectTransfer(int $transferId): void
     {
         Database::execute(
-            'UPDATE share_transfers SET status = "rejected" WHERE id = ? AND status = "pending"',
-            [$transferId]
+            'UPDATE share_transfers SET status = "rejected" WHERE id = ? AND status = "pending" AND tenant_id = ?',
+            [$transferId, Tenancy::idOrFail()]
         );
     }
 
@@ -145,13 +146,14 @@ class ShareService
     {
         return Database::transaction(function () use ($shareholderId, $classId, $quantity, $date) {
             $number = (string) Database::scalar(
-                'SELECT COALESCE(MAX(CAST(SUBSTRING(certificate_number, 4) AS INTEGER)), 0) + 1 FROM share_certificates'
+                'SELECT COALESCE(MAX(CAST(SUBSTRING(certificate_number, 4) AS INTEGER)), 0) + 1 FROM share_certificates WHERE tenant_id = ?',
+                [Tenancy::idOrFail()]
             );
             $code = 'CT-' . str_pad((string) $number, 5, '0', STR_PAD_LEFT);
             Database::execute(
-                'INSERT INTO share_certificates (certificate_number, shareholder_id, share_class_id, quantity, issue_date)
-                 VALUES (?,?,?,?,?)',
-                [$code, $shareholderId, $classId, $quantity, $date]
+                'INSERT INTO share_certificates (certificate_number, shareholder_id, share_class_id, quantity, issue_date, tenant_id)
+                 VALUES (?,?,?,?,?,?)',
+                [$code, $shareholderId, $classId, $quantity, $date, Tenancy::idOrFail()]
             );
             return Database::one('SELECT * FROM share_certificates WHERE id = ?', [Database::lastId()]);
         });
@@ -173,24 +175,24 @@ class ShareService
             return;
         }
         $row = Database::one(
-            'SELECT quantity FROM share_holdings WHERE shareholder_id = ? AND share_class_id = ?',
-            [$shareholderId, $classId]
+            'SELECT quantity FROM share_holdings WHERE shareholder_id = ? AND share_class_id = ? AND tenant_id = ?',
+            [$shareholderId, $classId, Tenancy::idOrFail()]
         );
         $new = ($row ? (int) $row['quantity'] : 0) + $delta;
         if ($new <= 0) {
             Database::execute(
-                'DELETE FROM share_holdings WHERE shareholder_id = ? AND share_class_id = ?',
-                [$shareholderId, $classId]
+                'DELETE FROM share_holdings WHERE shareholder_id = ? AND share_class_id = ? AND tenant_id = ?',
+                [$shareholderId, $classId, Tenancy::idOrFail()]
             );
         } elseif ($row) {
             Database::execute(
-                'UPDATE share_holdings SET quantity = ? WHERE shareholder_id = ? AND share_class_id = ?',
-                [$new, $shareholderId, $classId]
+                'UPDATE share_holdings SET quantity = ? WHERE shareholder_id = ? AND share_class_id = ? AND tenant_id = ?',
+                [$new, $shareholderId, $classId, Tenancy::idOrFail()]
             );
         } else {
             Database::execute(
-                'INSERT INTO share_holdings (shareholder_id, share_class_id, quantity) VALUES (?,?,?)',
-                [$shareholderId, $classId, $new]
+                'INSERT INTO share_holdings (shareholder_id, share_class_id, quantity, tenant_id) VALUES (?,?,?,?)',
+                [$shareholderId, $classId, $new, Tenancy::idOrFail()]
             );
         }
     }

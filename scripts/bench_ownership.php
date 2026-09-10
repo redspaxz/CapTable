@@ -23,6 +23,9 @@ foreach ($argv as $arg) {
 define('BASE_PATH', dirname(__DIR__));
 require BASE_PATH . '/app/bootstrap.php';
 
+// CLI: no session, pin the demo tenant for OwnershipService.
+\App\Core\Tenancy::setForced(1);
+
 use App\Core\App;
 use App\Core\Database;
 use App\Modules\CapTable\OwnershipService;

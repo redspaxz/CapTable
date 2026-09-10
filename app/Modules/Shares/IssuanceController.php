@@ -7,6 +7,7 @@ namespace App\Modules\Shares;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Core\Request;
 use App\Core\Validator;
 use App\Modules\CapTable\OwnershipService;
@@ -22,7 +23,9 @@ class IssuanceController extends Controller
                  FROM share_issuances i
                  JOIN shareholders s ON s.id = i.shareholder_id
                  JOIN share_classes c ON c.id = i.share_class_id
-                 ORDER BY i.issuance_date DESC, i.id DESC'
+                 WHERE i.tenant_id = ?
+                 ORDER BY i.issuance_date DESC, i.id DESC',
+                [\App\Core\Tenancy::idOrFail()]
             ),
         ]);
     }
@@ -30,14 +33,14 @@ class IssuanceController extends Controller
     public function create(): string
     {
         $service = new OwnershipService();
-        $classes = Database::all('SELECT * FROM share_classes ORDER BY code');
+        $classes = Database::all('SELECT * FROM share_classes WHERE tenant_id = ? ORDER BY code', [\App\Core\Tenancy::idOrFail()]);
         foreach ($classes as &$class) {
             $class['remaining'] = (int) $class['shares_authorized'] - $service->outstanding((int) $class['id']);
         }
         return $this->view('issuances/form', [
             'title' => 'New issuance',
             'classes' => $classes,
-            'shareholders' => Database::all('SELECT * FROM shareholders ORDER BY name'),
+            'shareholders' => Database::all('SELECT * FROM shareholders WHERE tenant_id = ? ORDER BY name', [\App\Core\Tenancy::idOrFail()]),
         ]);
     }
 
@@ -56,7 +59,7 @@ class IssuanceController extends Controller
         $v->required('share_class_id', 'shareholder_id', 'quantity', 'issuance_date')
           ->positive('share_class_id', 'shareholder_id', 'quantity')->date('issuance_date');
 
-        $class = Database::one('SELECT * FROM share_classes WHERE id = ?', [$data['share_class_id']]);
+        $class = Database::one('SELECT * FROM share_classes WHERE id = ? AND tenant_id = ?', [$data['share_class_id'], \App\Core\Tenancy::idOrFail()]);
         $ownership = new OwnershipService();
         if ($v->fails() || !$class) {
             \App\flash('error', __('Class, shareholder, quantity and date are required.'));

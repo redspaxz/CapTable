@@ -7,6 +7,7 @@ namespace App\Modules\Shares;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Core\Request;
 use App\Core\Validator;
 use App\Modules\CapTable\OwnershipService;
@@ -16,7 +17,7 @@ class ShareClassController extends Controller
     public function index(): string
     {
         $service = new OwnershipService();
-        $classes = Database::all('SELECT * FROM share_classes ORDER BY code');
+        $classes = Database::all('SELECT * FROM share_classes WHERE tenant_id = ? ORDER BY code', [\App\Core\Tenancy::idOrFail()]);
         foreach ($classes as &$class) {
             $class['outstanding'] = $service->outstanding((int) $class['id']);
         }
@@ -42,15 +43,15 @@ class ShareClassController extends Controller
         ];
         $v = new Validator($data);
         $v->required('code', 'name')->positive('nominal_value', 'shares_authorized')->date('lockup_until');
-        if ($v->fails() || Database::one('SELECT id FROM share_classes WHERE code = ?', [$data['code']])) {
+        if ($v->fails() || Database::one('SELECT id FROM share_classes WHERE code = ? AND tenant_id = ?', [$data['code'], \App\Core\Tenancy::idOrFail()])) {
             \App\flash('error', __('Code, label, par value and authorized count are required (code must be unique).'));
             redirect('/classes');
         }
         Database::execute(
-            'INSERT INTO share_classes (code, name, nominal_value, shares_authorized, rights, liquidation_multiplier, liquidation_priority, participating, category, voting_weight, requires_approval, lockup_until) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+            'INSERT INTO share_classes (code, name, nominal_value, shares_authorized, rights, liquidation_multiplier, liquidation_priority, participating, category, voting_weight, requires_approval, lockup_until, tenant_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
             [$data['code'], $data['name'], $data['nominal_value'], $data['shares_authorized'], $data['rights'],
              $data['liquidation_multiplier'], $data['liquidation_priority'], $data['participating'],
-             $data['category'], $data['voting_weight'], $data['requires_approval'], $data['lockup_until']]
+             $data['category'], $data['voting_weight'], $data['requires_approval'], $data['lockup_until'], \App\Core\Tenancy::idOrFail()]
         );
         \App\flash('success', __('Share class created.'));
         redirect('/classes');

@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS shareholders (
 
 CREATE TABLE IF NOT EXISTS share_classes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT NOT NULL UNIQUE,
+    code TEXT NOT NULL,
     name TEXT NOT NULL,
     nominal_value INTEGER NOT NULL,
     shares_authorized INTEGER NOT NULL,
@@ -206,3 +206,28 @@ CREATE TABLE IF NOT EXISTS convertibles (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE share_transfers ADD COLUMN notary_reference TEXT;
+
+-- Multi-tenancy: one deployment serves several companies.
+CREATE TABLE IF NOT EXISTS tenants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+INSERT INTO tenants (id, name) VALUES (1, 'T&Tech Consulting Group');
+
+ALTER TABLE settings ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE users ADD COLUMN tenant_id INTEGER NULL DEFAULT 1;
+ALTER TABLE shareholders ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE share_classes ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE share_issuances ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE share_transfers ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE share_movements ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE share_holdings ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE share_certificates ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE documents ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE option_grants ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE option_exercises ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE beneficial_owners ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE convertibles ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_class_tenant_code ON share_classes (tenant_id, code);

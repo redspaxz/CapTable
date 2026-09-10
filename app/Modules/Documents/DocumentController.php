@@ -7,6 +7,7 @@ namespace App\Modules\Documents;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Core\Request;
 use App\Core\Validator;
 use App\Modules\CapTable\OwnershipService;
@@ -23,7 +24,9 @@ class DocumentController extends Controller
                  FROM share_certificates cert
                  JOIN shareholders s ON s.id = cert.shareholder_id
                  JOIN share_classes c ON c.id = cert.share_class_id
-                 ORDER BY cert.id DESC'
+                 WHERE cert.tenant_id = ?
+                 ORDER BY cert.id DESC',
+                [\App\Core\Tenancy::idOrFail()]
             ),
         ]);
     }
@@ -32,8 +35,8 @@ class DocumentController extends Controller
     {
         return $this->view('documents/certificate_form', [
             'title' => 'Issue a share certificate',
-            'classes' => Database::all('SELECT * FROM share_classes ORDER BY code'),
-            'shareholders' => Database::all('SELECT * FROM shareholders ORDER BY name'),
+            'classes' => Database::all('SELECT * FROM share_classes WHERE tenant_id = ? ORDER BY code', [\App\Core\Tenancy::idOrFail()]),
+            'shareholders' => Database::all('SELECT * FROM shareholders WHERE tenant_id = ? ORDER BY name', [\App\Core\Tenancy::idOrFail()]),
         ]);
     }
 
@@ -60,8 +63,8 @@ class DocumentController extends Controller
              FROM share_certificates cert
              JOIN shareholders s ON s.id = cert.shareholder_id
              JOIN share_classes c ON c.id = cert.share_class_id
-             WHERE cert.id = ?',
-            [$id]
+             WHERE cert.id = ? AND cert.tenant_id = ?',
+            [$id, \App\Core\Tenancy::idOrFail()]
         );
         if (!$cert) {
             redirect('/documents');
@@ -83,8 +86,8 @@ class DocumentController extends Controller
              JOIN shareholders seller ON seller.id = t.seller_id
              JOIN shareholders buyer ON buyer.id = t.buyer_id
              JOIN share_classes c ON c.id = t.share_class_id
-             WHERE t.id = ?',
-            [$transferId]
+             WHERE t.id = ? AND t.tenant_id = ?',
+            [$transferId, \App\Core\Tenancy::idOrFail()]
         );
         if (!$transfer) {
             redirect('/transfers');
@@ -121,13 +124,14 @@ class DocumentController extends Controller
             redirect('/documents/minutes/new');
         }
         Database::execute(
-            'INSERT INTO documents (type, title, ref, payload, created_by) VALUES (?,?,?,?,?)',
+            'INSERT INTO documents (type, title, ref, payload, created_by, tenant_id) VALUES (?,?,?,?,?,?)',
             [
                 'minutes',
                 'PV ' . $data['meeting_type'] . ' du ' . $data['meeting_date'],
                 'PV-' . date('Ymd', strtotime($data['meeting_date'])),
                 json_encode($data, JSON_UNESCAPED_UNICODE),
                 \App\Core\Auth::user()['id'] ?? null,
+                \App\Core\Tenancy::idOrFail(),
             ]
         );
         return $this->view('documents/minutes', [

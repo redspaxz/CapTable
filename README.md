@@ -89,8 +89,40 @@ bash scripts/uat.sh          # port personnalisé : UAT_PORT=9090 bash scripts/u
 | T15 Convertibles & devise | OCA modélisée, pro-forma dilué, équivalent EUR (taux 655,957) |
 | T16 Cohérence projection | `share_holdings` identique au repli du registre après chaque écriture (agrément, exercice, émission) |
 | T17 Migration install v1 | table supprimée → l'app replie le registre (200), migration recrée + backfill, projection re-cohérente |
+| T18 Multi-sociétés | isolation des données entre sociétés (annuaire, cap table, accès directs, API), super-admin : sélecteur, bascule, onboarding d'une nouvelle société |
 
-**Dernière exécution : 2026-09-07 — 59/59 réussis** (PHP 8.2, SQLite). Les lectures temps réel passent par la projection `share_holdings` maintenue transactionnellement (registres volumineux : < 1 ms / 2 MiB contre ~120 ms / 90 MiB par repli PHP) ; l'historique à date reste reconstitué en SQL. Si la table est absente (install pré-projection), l'app replie le registre en attendant la migration `database/migrate_holdings.php` (idempotente, lancée automatiquement au déploiement cPanel). Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
+**Dernière exécution : 2026-09-10 — 70/70 réussis** (PHP 8.2, SQLite). Les lectures temps réel passent par la projection `share_holdings` maintenue transactionnellement (registres volumineux : < 1 ms / 2 MiB contre ~120 ms / 90 MiB par repli PHP) ; l'historique à date reste reconstitué en SQL. Si la table est absente (install pré-projection), l'app replie le registre en attendant la migration `database/migrate_holdings.php` (idempotente, lancée automatiquement au déploiement cPanel). Le script sort avec un code d'erreur non nul si une assertion échoue : intégrable dans une CI. Note : les données de test sont en ASCII pur car la console Windows peut altérer les accents transmis à curl.
+
+## Multi-sociétés (multi-tenant)
+
+Un seul déploiement sert plusieurs sociétés. Chaque table métier porte une
+colonne `tenant_id` et **toutes** les requêtes sont filtrées par la société
+active — l'isolation est vérifiée par la recette T18 (annuaire, cap table,
+accès directs par identifiant, API, portail).
+
+- **Contexte actif** : résolu à la connexion depuis `users.tenant_id` et
+  stocké en session ; un changement de rôle ne s'applique qu'à la
+  reconnexion. Le middleware `Tenancy::requireActive()` protège toutes les
+  pages (le super-admin sans société est redirigé vers `/tenants`).
+- **Super-admin global** (`role = superadmin`, `tenant_id NULL`) : page
+  **Companies** (liste, création d'une société + compte administrateur,
+  bascule via `/tenant/switch/{id}`, régénération de session à chaque
+  bascule). Dans l'UI, le nom de la société active s'affiche dans la barre
+  et le pied de page.
+- **Onboarding** : le formulaire `/tenants` crée la société, sa fiche
+  `settings` (profil légal) et son compte admin (rôle `admin`) en une
+  transaction.
+- **Comptes** : un compte appartient à une seule société (e-mail unique au
+  niveau global). Une même personne impliquée dans deux sociétés utilise deux
+  comptes. Un tableau pivot user↔société est une extension future.
+- **Identifiants de démo** : `admin@ttechgroup.cm` (T&Tech, société 1),
+  `admin2@ttechgroup.cm` (Ngoola Ventures, société 2),
+  `super@ttechgroup.cm` (super-admin) — mot de passe `password`, à changer
+  en production.
+- **Migration d'une installation existante** : toutes les données actuelles
+  basculent sur la société 1 (T&Tech) — voir le bloc multi-tenant de
+  `database/upgrade_live.sql` (table `tenants`, colonnes `tenant_id`,
+  unicité des codes de catégories par société).
 
 ## Déploiement cPanel (hébergement mutualisé)
 

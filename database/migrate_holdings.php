@@ -40,6 +40,7 @@ if ($driver === 'sqlite') {
             shareholder_id INTEGER NOT NULL REFERENCES shareholders(id),
             share_class_id INTEGER NOT NULL REFERENCES share_classes(id),
             quantity INTEGER NOT NULL DEFAULT 0,
+            tenant_id INTEGER NOT NULL DEFAULT 1,
             UNIQUE (shareholder_id, share_class_id)
         )'
     );
@@ -50,6 +51,7 @@ if ($driver === 'sqlite') {
             shareholder_id INT NOT NULL,
             share_class_id INT NOT NULL,
             quantity BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            tenant_id INT NOT NULL DEFAULT 1,
             UNIQUE KEY uq_shareholder_class (shareholder_id, share_class_id),
             FOREIGN KEY (shareholder_id) REFERENCES shareholders(id),
             FOREIGN KEY (share_class_id) REFERENCES share_classes(id)
@@ -86,18 +88,18 @@ $moved = Database::transaction(function () use ($driver): int {
     Database::execute('DELETE FROM share_holdings');
 
     $sql = "
-        INSERT INTO share_holdings (shareholder_id, share_class_id, quantity)
-        SELECT shareholder_id, share_class_id, SUM(qty) AS quantity
+        INSERT INTO share_holdings (shareholder_id, share_class_id, quantity, tenant_id)
+        SELECT shareholder_id, share_class_id, SUM(qty) AS quantity, tenant_id
         FROM (
-            SELECT shareholder_id, share_class_id,
+            SELECT shareholder_id, share_class_id, tenant_id,
                    CASE WHEN movement_type IN ('issuance','transfer_in') THEN CAST(quantity AS SIGNED)
                         WHEN movement_type = 'transfer_out' THEN -CAST(quantity AS SIGNED) ELSE 0 END AS qty
             FROM share_movements
             UNION ALL
-            SELECT counterparty_id AS shareholder_id, share_class_id, CAST(quantity AS SIGNED) AS qty
+            SELECT counterparty_id AS shareholder_id, share_class_id, tenant_id, CAST(quantity AS SIGNED) AS qty
             FROM share_movements WHERE movement_type = 'transfer_out' AND counterparty_id > 0
         ) movements
-        GROUP BY shareholder_id, share_class_id
+        GROUP BY shareholder_id, share_class_id, tenant_id
         HAVING SUM(qty) > 0";
     Database::pdo()->exec($sql);
     return (int) Database::scalar('SELECT COUNT(*) FROM share_holdings');

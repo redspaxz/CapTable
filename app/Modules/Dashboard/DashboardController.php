@@ -6,6 +6,7 @@ namespace App\Modules\Dashboard;
 
 use App\Core\Controller;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Modules\CapTable\OwnershipService;
 
 class DashboardController extends Controller
@@ -27,8 +28,8 @@ class DashboardController extends Controller
             'company' => $company,
             'totalShares' => $this->ownership->totalShares(),
             'totalCapital' => $this->ownership->totalCapital(),
-            'shareholderCount' => (int) Database::scalar('SELECT COUNT(*) FROM shareholders'),
-            'movementCount' => (int) Database::scalar('SELECT COUNT(*) FROM share_movements'),
+            'shareholderCount' => (int) Database::scalar('SELECT COUNT(*) FROM shareholders WHERE tenant_id = ?', [\App\Core\Tenancy::idOrFail()]),
+            'movementCount' => (int) Database::scalar('SELECT COUNT(*) FROM share_movements WHERE tenant_id = ?', [\App\Core\Tenancy::idOrFail()]),
             'topHolders' => array_slice($holdings, 0, 6),
             'capitalTimeline' => $this->capitalTimeline(),
             'recentMovements' => Database::all(
@@ -36,7 +37,9 @@ class DashboardController extends Controller
                  FROM share_movements m
                  LEFT JOIN shareholders s ON s.id = m.shareholder_id
                  LEFT JOIN share_classes c ON c.id = m.share_class_id
-                 ORDER BY m.movement_date DESC, m.id DESC LIMIT 6'
+                 WHERE m.tenant_id = ?
+                 ORDER BY m.movement_date DESC, m.id DESC LIMIT 6',
+                [\App\Core\Tenancy::idOrFail()]
             ),
         ]);
     }
@@ -53,8 +56,10 @@ class DashboardController extends Controller
                     SUM(CASE WHEN m.movement_type = "issuance" THEN m.quantity ELSE 0 END * c.nominal_value) AS cap
              FROM share_movements m
              JOIN share_classes c ON c.id = m.share_class_id
+             WHERE m.tenant_id = :tenant
              GROUP BY m.movement_date
-             ORDER BY m.movement_date'
+             ORDER BY m.movement_date',
+            ['tenant' => \App\Core\Tenancy::idOrFail()]
         );
         $labels = [];
         $values = [];

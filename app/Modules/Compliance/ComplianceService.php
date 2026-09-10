@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Compliance;
 
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Modules\CapTable\OwnershipService;
 
 /**
@@ -78,9 +79,9 @@ class ComplianceService
                 $movements = Database::all(
                     'SELECT m.*, c.code AS class_code FROM share_movements m
                      LEFT JOIN share_classes c ON c.id = m.share_class_id
-                     WHERE m.shareholder_id = ? OR m.counterparty_id = ?
+                     WHERE (m.shareholder_id = ? OR m.counterparty_id = ?) AND m.tenant_id = ?
                      ORDER BY m.movement_date DESC LIMIT 10',
-                    [$h['shareholder']['id'], $h['shareholder']['id']]
+                    [$h['shareholder']['id'], $h['shareholder']['id'], Tenancy::idOrFail()]
                 );
                 $regulated[] = $h + ['movements' => $movements];
             }
@@ -93,7 +94,8 @@ class ComplianceService
     {
         $declared = Database::all(
             'SELECT bo.*, s.name AS shareholder_name FROM beneficial_owners bo
-             LEFT JOIN shareholders s ON s.id = bo.shareholder_id ORDER BY bo.ownership_pct DESC'
+             LEFT JOIN shareholders s ON s.id = bo.shareholder_id WHERE bo.tenant_id = ? ORDER BY bo.ownership_pct DESC',
+            [Tenancy::idOrFail()]
         );
         $alerts = [];
         foreach ($this->ownership->byShareholder() as $h) {

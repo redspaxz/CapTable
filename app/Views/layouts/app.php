@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Share capital &amp; equity management for T&amp;Tech Consulting Group (OHADA law)">
-<title><?= e($title ?? 'T&T') ?> · T&amp;Tech Consulting Group</title>
+<title><?= e($title ?? 'T&T') ?> · <?= e(\App\Core\Tenancy::current()['name'] ?? 'T&Tech Consulting Group') ?></title>
 <link href="<?= asset('/assets/vendor/bootstrap.min.css') ?>" rel="stylesheet">
 <link href="<?= asset('/assets/vendor/bootstrap-icons.min.css') ?>" rel="stylesheet">
 <link href="<?= asset('/assets/css/app.css') ?>" rel="stylesheet">
@@ -17,6 +17,8 @@
     <div class="container-fluid">
       <a class="navbar-brand d-flex align-items-center gap-2" href="<?= url('/') ?>">
         <span class="brand-mark" aria-hidden="true">T&amp;T</span>
+        <?php $tenant = \App\Core\Tenancy::current(); ?>
+        <span class="fw-semibold d-none d-sm-inline"><?= e($tenant['name'] ?? '') ?></span>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"
               aria-controls="nav" aria-expanded="false" aria-label="<?= __('Toggle navigation') ?>">
@@ -39,12 +41,26 @@
           <li class="nav-item"><a class="nav-link" href="<?= url('/documents') ?>"><i class="bi bi-file-earmark-text me-1"></i><?= __('Documents') ?></a></li>
         </ul>
         <div class="d-flex align-items-lg-center flex-column flex-lg-row gap-2">
+          <?php if (Auth::isSuperAdmin()): ?>
+          <div class="dropdown">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-building me-1"></i><?= e($tenant['name'] ?? __('Companies')) ?>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <?php foreach (\App\Core\Tenancy::all() as $t): ?>
+              <li><a class="dropdown-item <?= (int) $t['id'] === (\App\Core\Tenancy::id() ?? 0) ? 'active' : '' ?>" href="<?= url('/tenant/switch/' . (int) $t['id']) ?>"><?= e($t['name']) ?></a></li>
+              <?php endforeach; ?>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="<?= url('/tenants') ?>"><i class="bi bi-gear me-1"></i><?= __('Manage companies') ?></a></li>
+            </ul>
+          </div>
+          <?php endif; ?>
           <div class="btn-group btn-group-sm" role="group" aria-label="<?= __('Language') ?>">
             <a class="btn btn-outline-light <?= $locale === 'en' ? 'active' : '' ?>" href="<?= url('/lang/en') ?>">EN</a>
             <a class="btn btn-outline-light <?= $locale === 'fr' ? 'active' : '' ?>" href="<?= url('/lang/fr') ?>">FR</a>
           </div>
           <button id="themeToggle" type="button" class="btn btn-outline-light btn-sm" aria-label="<?= __('Toggle theme') ?>"></button>
-          <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+          <?php if (Auth::canWrite()): ?>
           <a class="btn btn-outline-light btn-sm" href="<?= url('/settings') ?>" aria-label="<?= __('Settings') ?>"><i class="bi bi-gear"></i></a>
           <?php endif; ?>
           <span class="navbar-text d-flex align-items-center gap-2">
@@ -82,7 +98,8 @@
 <?php if (Auth::check()): ?>
 <footer class="app-footer mt-auto">
   <div class="container-fluid py-3 small text-muted d-flex flex-column flex-md-row justify-content-between gap-1">
-    <span><strong>T&amp;Tech Consulting Group</strong> — RCCM <?= e(\App\company()['rccm'] ?? '—') ?> · <?= e(\App\company()['head_office'] ?? '') ?></span>
+    <?php $company = \App\company(); ?>
+    <span><strong><?= e($company['name'] ?? (\App\Core\Tenancy::current()['name'] ?? '')) ?></strong> — RCCM <?= e($company['rccm'] ?? '—') ?> · <?= e($company['head_office'] ?? '') ?></span>
     <span><?= __('OHADA compliant (AUSCGIE art. 716)') ?></span>
   </div>
 </footer>

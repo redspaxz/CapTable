@@ -7,6 +7,7 @@ namespace App\Modules\Shareholders;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Core\Request;
 use App\Core\Validator;
 
@@ -18,11 +19,12 @@ class ShareholderController extends Controller
         $sql = 'SELECT s.*,
                 (SELECT COALESCE(SUM(CASE WHEN m.movement_type = "issuance" THEN m.quantity ELSE 0 END),0)
                  FROM share_movements m WHERE m.shareholder_id = s.id) AS share_count
-                FROM shareholders s';
-        $params = [];
+                FROM shareholders s WHERE s.tenant_id = ?';
+        $params = [\App\Core\Tenancy::idOrFail()];
         if ($search !== '') {
-            $sql .= ' WHERE s.name LIKE ? OR s.id_number LIKE ?';
-            $params = ["%$search%", "%$search%"];
+            $sql .= ' AND (s.name LIKE ? OR s.id_number LIKE ?)';
+            $params[] = "%$search%";
+            $params[] = "%$search%";
         }
         $sql .= ' ORDER BY s.name';
         return $this->view('shareholders/index', [
@@ -53,10 +55,10 @@ class ShareholderController extends Controller
             redirect('/shareholders/new');
         }
         Database::execute(
-            'INSERT INTO shareholders (type, name, id_number, id_type, address, email, phone, nationality, notes)
-             VALUES (?,?,?,?,?,?,?,?,?)',
+            'INSERT INTO shareholders (type, name, id_number, id_type, address, email, phone, nationality, notes, tenant_id)
+             VALUES (?,?,?,?,?,?,?,?,?,?)',
             [$data['type'], $data['name'], $data['id_number'], $data['id_type'], $data['address'],
-             $data['email'], $data['phone'], $data['nationality'], $data['notes']]
+             $data['email'], $data['phone'], $data['nationality'], $data['notes'], \App\Core\Tenancy::idOrFail()]
         );
         \App\flash('success', __('Shareholder saved.'));
         redirect('/shareholders');
@@ -64,7 +66,7 @@ class ShareholderController extends Controller
 
     public function edit(int $id): string
     {
-        $shareholder = Database::one('SELECT * FROM shareholders WHERE id = ?', [$id]);
+        $shareholder = Database::one('SELECT * FROM shareholders WHERE id = ? AND tenant_id = ?', [$id, \App\Core\Tenancy::idOrFail()]);
         if (!$shareholder) {
             redirect('/shareholders');
         }
@@ -87,9 +89,9 @@ class ShareholderController extends Controller
         }
         Database::execute(
             'UPDATE shareholders SET type=?, name=?, id_number=?, id_type=?, address=?, email=?, phone=?, nationality=?, notes=?
-             WHERE id = ?',
+             WHERE id = ? AND tenant_id = ?',
             [$data['type'], $data['name'], $data['id_number'], $data['id_type'], $data['address'],
-             $data['email'], $data['phone'], $data['nationality'], $data['notes'], $id]
+             $data['email'], $data['phone'], $data['nationality'], $data['notes'], $id, \App\Core\Tenancy::idOrFail()]
         );
         \App\flash('success', __('Shareholder updated.'));
         redirect('/shareholders');

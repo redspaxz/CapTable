@@ -2,7 +2,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0"><?= __('Documents & reports') ?></h1>
   <div>
-    <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+    <?php if (Auth::canWrite()): ?>
     <a class="btn btn-primary" href="<?= url('/documents/certificates/new') ?>">+ <?= __('Share certificate') ?></a>
     <a class="btn btn-outline-primary" href="<?= url('/documents/minutes/new') ?>">+ <?= __('Meeting minutes') ?></a>
     <?php endif; ?>
@@ -45,7 +45,7 @@
         </li>
         <li class="list-group-item d-flex justify-content-between align-items-center">
           <?= __('General meeting minutes') ?>
-          <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+          <?php if (Auth::canWrite()): ?>
           <a class="btn btn-sm btn-outline-dark" href="<?= url('/documents/minutes/new') ?>"><?= __('Draft') ?></a>
           <?php else: ?><span class="text-muted small"><?= __('Read only') ?></span><?php endif; ?>
         </li>

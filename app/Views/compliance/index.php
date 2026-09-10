@@ -6,7 +6,7 @@
   </div>
   <div>
     <a class="btn btn-outline-primary btn-sm" href="<?= url('/meeting') ?>"><i class="bi bi-clipboard2-check me-1"></i><?= __('Voting rights') ?></a>
-    <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+    <?php if (Auth::canWrite()): ?>
     <a class="btn btn-primary btn-sm" href="<?= url('/compliance/ubo/new') ?>"><i class="bi bi-person-lock me-1"></i><?= __('Declare a beneficiary') ?></a>
     <?php endif; ?>
   </div>
@@ -24,7 +24,7 @@
             — <?= e($t['seller_name']) ?> → <?= e($t['buyer_name']) ?><br>
             <small class="text-muted"><?= __('Deed') ?> <?= e($t['deed_reference']) ?> · <?= __('pre-emption until') ?> <?= e($t['preemption_deadline']) ?></small>
           </div>
-          <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+          <?php if (Auth::canWrite()): ?>
           <form method="post" action="<?= url('/transfers/' . $t['id'] . '/approve') ?>" class="d-inline">
             <?= App\Core\Csrf::field() ?>
             <input type="hidden" name="approval_date" value="<?= date('Y-m-d') ?>">

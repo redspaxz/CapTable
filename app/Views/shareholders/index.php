@@ -1,7 +1,7 @@
 <?php use function App\{e, url, shares}; use App\Core\Auth; ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h4 mb-0"><?= __('Shareholders') ?></h1>
-  <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+  <?php if (Auth::canWrite()): ?>
   <a href="<?= url('/shareholders/new') ?>" class="btn btn-primary"><i class="bi bi-person-plus me-1"></i><?= __('New shareholder') ?></a>
   <?php endif; ?>
 </div>
@@ -19,7 +19,7 @@
       <td><?= e($s['email']) ?><br><small class="text-muted"><?= e($s['phone']) ?></small></td>
       <td class="text-end"><?= shares((int) $s['share_count']) ?></td>
       <td>
-        <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+        <?php if (Auth::canWrite()): ?>
         <a class="btn btn-sm btn-outline-secondary" href="<?= url('/shareholders/' . $s['id'] . '/edit') ?>"><?= __('Edit') ?></a>
         <?php endif; ?>
       </td>

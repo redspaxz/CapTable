@@ -7,6 +7,7 @@ namespace App\Modules\Options;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Core\Request;
 use App\Core\Validator;
 
@@ -27,8 +28,8 @@ class OptionController extends Controller
     {
         return $this->view('options/form', [
             'title' => 'New option grant',
-            'classes' => Database::all('SELECT * FROM share_classes ORDER BY code'),
-            'shareholders' => Database::all('SELECT * FROM shareholders ORDER BY name'),
+            'classes' => Database::all('SELECT * FROM share_classes WHERE tenant_id = ? ORDER BY code', [\App\Core\Tenancy::idOrFail()]),
+            'shareholders' => Database::all('SELECT * FROM shareholders WHERE tenant_id = ? ORDER BY name', [\App\Core\Tenancy::idOrFail()]),
         ]);
     }
 
@@ -79,8 +80,8 @@ class OptionController extends Controller
              FROM option_grants g
              JOIN shareholders s ON s.id = g.shareholder_id
              JOIN share_classes c ON c.id = g.share_class_id
-             WHERE g.id = ?',
-            [$id]
+             WHERE g.id = ? AND g.tenant_id = ?',
+            [$id, \App\Core\Tenancy::idOrFail()]
         );
         if (!$grant) {
             redirect('/options');
@@ -96,8 +97,8 @@ class OptionController extends Controller
                 'SELECT e.*, i.reference AS issuance_reference
                  FROM option_exercises e
                  LEFT JOIN share_issuances i ON i.id = e.share_issuance_id
-                 WHERE e.grant_id = ? ORDER BY e.exercise_date DESC, e.id DESC',
-                [$id]
+                 WHERE e.grant_id = ? AND e.tenant_id = ? ORDER BY e.exercise_date DESC, e.id DESC',
+                [$id, \App\Core\Tenancy::idOrFail()]
             ),
         ]);
     }

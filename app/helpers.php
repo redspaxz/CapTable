@@ -65,16 +65,20 @@ function pct(float $value): string
     return number_format($value, 2, ',', ' ') . ' %';
 }
 
-/** Current company profile (memoized). */
+/** Current company profile of the ACTIVE tenant (memoized). */
 function company(): array
 {
     static $company = null;
     if ($company === null) {
-        $company = \App\Core\Database::one(
-            'SELECT company_name AS name, legal_form, rccm, niu, head_office, currency,
-                    fmv_per_share, secondary_currency, fx_rate, option_tax_rate
-             FROM settings ORDER BY id LIMIT 1'
-        ) ?? [];
+        $tenantId = \App\Core\Tenancy::id();
+        $company = $tenantId !== null
+            ? (\App\Core\Database::one(
+                'SELECT company_name AS name, legal_form, rccm, niu, head_office, currency,
+                        fmv_per_share, secondary_currency, fx_rate, option_tax_rate, default_language
+                 FROM settings WHERE tenant_id = ?',
+                [$tenantId]
+              ) ?? [])
+            : [];
     }
     return $company;
 }

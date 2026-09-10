@@ -4,7 +4,7 @@
     <h1 class="h4 mb-0"><?= __('Options & vesting') ?></h1>
     <div class="text-muted small"><?= __('Equity incentive plan — monthly vesting with cliff, automated exercise') ?></div>
   </div>
-  <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+  <?php if (Auth::canWrite()): ?>
   <a href="<?= url('/options/new') ?>" class="btn btn-primary"><i class="bi bi-award me-1"></i><?= __('New grant') ?></a>
   <?php endif; ?>
 </div>

@@ -29,8 +29,8 @@ class SettingsController extends Controller
             $language = Lang::DEFAULT;
         }
         Database::execute(
-            'UPDATE settings SET default_language = ? WHERE id = (SELECT MIN(id) FROM settings)',
-            [$language]
+            'UPDATE settings SET default_language = ? WHERE tenant_id = ?',
+            [$language, \App\Core\Tenancy::idOrFail()]
         );
         \App\flash('success', __('Default language updated.'));
         \App\redirect('/settings');

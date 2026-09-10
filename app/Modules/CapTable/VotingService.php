@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\CapTable;
 
 use App\Core\Database;
+use App\Core\Tenancy;
 
 /**
  * General-meeting voting engine: per-class voting weight (1 ordinaire,
@@ -18,7 +19,7 @@ class VotingService
     public function votingPower(): array
     {
         $classes = [];
-        foreach (Database::all('SELECT * FROM share_classes') as $c) {
+        foreach (Database::all('SELECT * FROM share_classes WHERE tenant_id = ?', [Tenancy::idOrFail()]) as $c) {
             $classes[(int) $c['id']] = $c;
         }
         $power = [];

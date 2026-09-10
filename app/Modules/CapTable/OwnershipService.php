@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\CapTable;
 
 use App\Core\Database;
+use App\Core\Tenancy;
 
 /**
  * Computes current (or as-of-date) holdings, ownership percentages and the
@@ -26,7 +27,7 @@ class OwnershipService
 
     private static function cacheKey(string $method, ?string $asOf): string
     {
-        return $method . '|' . ($asOf ?? 'current');
+        return Tenancy::idOrFail() . '|' . $method . '|' . ($asOf ?? 'current');
     }
 
     private static function remember(string $key, callable $fn): mixed
@@ -72,12 +73,13 @@ class OwnershipService
                 ? $this->netQuantities()
                 : $this->netQuantitiesFromRegister($asOf);
 
+            $tenantId = Tenancy::idOrFail();
             $classes = [];
-            foreach (Database::all('SELECT * FROM share_classes') as $c) {
+            foreach (Database::all('SELECT * FROM share_classes WHERE tenant_id = ?', [$tenantId]) as $c) {
                 $classes[(int) $c['id']] = $c;
             }
             $shareholders = [];
-            foreach (Database::all('SELECT * FROM shareholders ORDER BY name') as $s) {
+            foreach (Database::all('SELECT * FROM shareholders WHERE tenant_id = ? ORDER BY name', [$tenantId]) as $s) {
                 $shareholders[(int) $s['id']] = $s;
             }
 
@@ -136,8 +138,9 @@ class OwnershipService
              FROM share_holdings h
              JOIN shareholders s ON s.id = h.shareholder_id
              JOIN share_classes c ON c.id = h.share_class_id
-             WHERE h.quantity > 0
-             ORDER BY h.shareholder_id, h.share_class_id'
+             WHERE h.quantity > 0 AND h.tenant_id = :tenant
+             ORDER BY h.shareholder_id, h.share_class_id',
+            ['tenant' => Tenancy::idOrFail()]
         );
     }
 
@@ -152,7 +155,7 @@ class OwnershipService
      */
     private function netQuantitiesFromRegister(?string $asOf = null): array
     {
-        $params = [];
+        $params = ['tenant' => Tenancy::idOrFail(), 'tenant2' => Tenancy::id()];
         $where1 = '';
         $where2 = '';
         if ($asOf !== null) {
@@ -168,11 +171,11 @@ class OwnershipService
                         CASE WHEN movement_type IN ('issuance','transfer_in') THEN CAST(quantity AS SIGNED)
                              WHEN movement_type = 'transfer_out' THEN -CAST(quantity AS SIGNED)
                              ELSE 0 END AS qty
-                 FROM share_movements WHERE 1 = 1{$where1}
+                 FROM share_movements WHERE tenant_id = :tenant{$where1}
                  UNION ALL
                  SELECT counterparty_id AS shareholder_id, share_class_id, CAST(quantity AS SIGNED) AS qty
                  FROM share_movements
-                 WHERE movement_type = 'transfer_out' AND counterparty_id > 0{$where2}
+                 WHERE movement_type = 'transfer_out' AND counterparty_id > 0 AND tenant_id = :tenant2{$where2}
              ) movements
              GROUP BY shareholder_id, share_class_id
              HAVING SUM(qty) > 0",
@@ -187,19 +190,19 @@ class OwnershipService
         }
         if ($asOf === null) {
             $row = Database::one(
-                'SELECT quantity FROM share_holdings WHERE shareholder_id = ? AND share_class_id = ?',
-                [$shareholderId, $classId]
+                'SELECT quantity FROM share_holdings WHERE shareholder_id = ? AND share_class_id = ? AND tenant_id = ?',
+                [$shareholderId, $classId, Tenancy::idOrFail()]
             );
             return (int) ($row['quantity'] ?? 0);
         }
-        $params = ['sid' => $shareholderId, 'cid' => $classId, 'asof' => $asOf];
+        $params = ['sid' => $shareholderId, 'cid' => $classId, 'asof' => $asOf, 'tenant' => Tenancy::idOrFail()];
         return (int) Database::scalar(
             "SELECT COALESCE(SUM(CASE
                 WHEN movement_type IN ('issuance','transfer_in') AND shareholder_id = :sid THEN quantity
                 WHEN movement_type = 'transfer_out' AND shareholder_id = :sid THEN -quantity
                 WHEN movement_type = 'transfer_out' AND counterparty_id = :sid THEN quantity
                 ELSE 0 END), 0)
-            FROM share_movements WHERE share_class_id = :cid AND movement_date <= :asof",
+            FROM share_movements WHERE share_class_id = :cid AND movement_date <= :asof AND tenant_id = :tenant",
             $params
         );
     }
@@ -216,8 +219,8 @@ class OwnershipService
         }
         $rows = $asOf === null
             ? Database::all(
-                'SELECT share_class_id, quantity FROM share_holdings WHERE shareholder_id = ? AND quantity > 0',
-                [$shareholderId]
+                'SELECT share_class_id, quantity FROM share_holdings WHERE shareholder_id = ? AND quantity > 0 AND tenant_id = ?',
+                [$shareholderId, Tenancy::idOrFail()]
             )
             : Database::all(
                 "SELECT share_class_id,
@@ -227,9 +230,9 @@ class OwnershipService
                             WHEN movement_type = 'transfer_out' AND counterparty_id = :sid THEN CAST(quantity AS SIGNED)
                             ELSE 0 END) AS quantity
                  FROM share_movements
-                 WHERE (shareholder_id = :sid OR counterparty_id = :sid2) AND movement_date <= :asof
+                 WHERE (shareholder_id = :sid OR counterparty_id = :sid2) AND movement_date <= :asof AND tenant_id = :tenant
                  GROUP BY share_class_id",
-                ['sid' => $shareholderId, 'sid2' => $shareholderId, 'asof' => $asOf]
+                ['sid' => $shareholderId, 'sid2' => $shareholderId, 'asof' => $asOf, 'tenant' => Tenancy::idOrFail()]
             );
         $holdings = [];
         foreach ($rows as $row) {
@@ -247,7 +250,7 @@ class OwnershipService
         return self::remember(self::cacheKey('byClass', $asOf), function () use ($asOf): array {
             $totals = $this->outstandingByClass($asOf);
             $rows = [];
-            foreach (Database::all('SELECT * FROM share_classes ORDER BY code') as $class) {
+            foreach (Database::all('SELECT * FROM share_classes WHERE tenant_id = ? ORDER BY code', [Tenancy::idOrFail()]) as $class) {
                 $qty = $totals[(int) $class['id']] ?? 0;
                 if ($qty > 0) {
                     $rows[] = [
@@ -275,12 +278,12 @@ class OwnershipService
                 $asOf = '9999-12-31'; // no projection yet -> fold the register
             }
             $rows = $asOf === null
-                ? Database::all('SELECT share_class_id, SUM(quantity) AS quantity FROM share_holdings GROUP BY share_class_id')
+                ? Database::all('SELECT share_class_id, SUM(quantity) AS quantity FROM share_holdings WHERE tenant_id = :tenant GROUP BY share_class_id', ['tenant' => Tenancy::idOrFail()])
                 : Database::all(
                     "SELECT share_class_id, SUM(CASE WHEN movement_type = 'issuance' THEN CAST(quantity AS SIGNED) ELSE 0 END) AS quantity
-                     FROM share_movements WHERE movement_date <= :asof
+                     FROM share_movements WHERE movement_date <= :asof AND tenant_id = :tenant
                      GROUP BY share_class_id",
-                    ['asof' => $asOf]
+                    ['asof' => $asOf, 'tenant' => Tenancy::idOrFail()]
                 );
             $totals = [];
             foreach ($rows as $row) {
@@ -297,15 +300,15 @@ class OwnershipService
         }
         if ($asOf === null) {
             $row = Database::one(
-                'SELECT SUM(quantity) AS quantity FROM share_holdings WHERE share_class_id = ?',
-                [$classId]
+                'SELECT SUM(quantity) AS quantity FROM share_holdings WHERE share_class_id = ? AND tenant_id = ?',
+                [$classId, Tenancy::idOrFail()]
             );
             return (int) ($row['quantity'] ?? 0);
         }
         return (int) Database::scalar(
             "SELECT COALESCE(SUM(CASE WHEN movement_type = 'issuance' THEN quantity ELSE 0 END), 0)
-            FROM share_movements WHERE share_class_id = ? AND movement_date <= :asof",
-            [$classId, 'asof' => $asOf]
+            FROM share_movements WHERE share_class_id = ? AND movement_date <= :asof AND tenant_id = :tenant",
+            [$classId, 'asof' => $asOf, 'tenant' => Tenancy::idOrFail()]
         );
     }
 
@@ -336,7 +339,8 @@ class OwnershipService
     public function waterfall(int $exitValue): array
     {
         $classes = Database::all(
-            'SELECT * FROM share_classes ORDER BY liquidation_priority, id'
+            'SELECT * FROM share_classes WHERE tenant_id = ? ORDER BY liquidation_priority, id',
+            [Tenancy::idOrFail()]
         );
         $holdings = $this->byShareholder();
         $outstanding = $this->outstandingByClass();

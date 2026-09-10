@@ -7,6 +7,7 @@ namespace App\Modules\Compliance;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Core\Database;
+use App\Core\Tenancy;
 use App\Core\Request;
 use App\Core\Validator;
 use App\Modules\CapTable\VotingService;
@@ -31,7 +32,8 @@ class ComplianceController extends Controller
                  JOIN shareholders seller ON seller.id = t.seller_id
                  JOIN shareholders buyer ON buyer.id = t.buyer_id
                  JOIN share_classes c ON c.id = t.share_class_id
-                 WHERE t.status = 'pending' ORDER BY t.transfer_date"
+                 WHERE t.status = 'pending' AND t.tenant_id = ? ORDER BY t.transfer_date",
+                [\App\Core\Tenancy::idOrFail()]
             ),
             'company' => \App\company(),
         ]);
@@ -41,7 +43,7 @@ class ComplianceController extends Controller
     {
         return $this->view('compliance/ubo_form', [
             'title' => 'Declare a beneficial owner',
-            'shareholders' => Database::all('SELECT * FROM shareholders ORDER BY name'),
+            'shareholders' => Database::all('SELECT * FROM shareholders WHERE tenant_id = ? ORDER BY name', [\App\Core\Tenancy::idOrFail()]),
         ]);
     }
 
@@ -65,10 +67,10 @@ class ComplianceController extends Controller
             redirect('/compliance/ubo/new');
         }
         Database::execute(
-            'INSERT INTO beneficial_owners (name, id_number, nationality, ownership_pct, control_nature, shareholder_id, declared_at, notes)
-             VALUES (?,?,?,?,?,?,?,?)',
+            'INSERT INTO beneficial_owners (name, id_number, nationality, ownership_pct, control_nature, shareholder_id, declared_at, notes, tenant_id)
+             VALUES (?,?,?,?,?,?,?,?,?)',
             [$data['name'], $data['id_number'], $data['nationality'], $data['ownership_pct'],
-             $data['control_nature'], $data['shareholder_id'], $data['declared_at'], $data['notes']]
+             $data['control_nature'], $data['shareholder_id'], $data['declared_at'], $data['notes'], \App\Core\Tenancy::idOrFail()]
         );
         \App\flash('success', __('Beneficial owner declared.'));
         redirect('/compliance');

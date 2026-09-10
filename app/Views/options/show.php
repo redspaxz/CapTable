@@ -56,7 +56,7 @@
   </section>
 
   <section class="col-lg-5">
-    <?php if (in_array(Auth::role(), ['admin', 'finance'], true)): ?>
+    <?php if (Auth::canWrite()): ?>
     <div class="card bg-white shadow-sm mb-3">
       <div class="card-header"><i class="bi bi-lightning-charge me-2"></i><?= __('Exercise options') ?></div>
       <div class="card-body">

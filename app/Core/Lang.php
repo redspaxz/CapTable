@@ -46,11 +46,15 @@ final class Lang
         return is_string($locale) && in_array($locale, self::LOCALES, true) ? $locale : null;
     }
 
-    /** Administrator-configured default (settings.default_language). */
+    /** Administrator-configured default (active tenant's settings.default_language). */
     public static function defaultLocale(): string
     {
         try {
-            $row = Database::one('SELECT default_language FROM settings ORDER BY id LIMIT 1');
+            $tenantId = Tenancy::id();
+            if ($tenantId === null) {
+                return self::DEFAULT;
+            }
+            $row = Database::one('SELECT default_language FROM settings WHERE tenant_id = ?', [$tenantId]);
             $locale = is_array($row) ? (string) ($row['default_language'] ?? '') : '';
             return in_array($locale, self::LOCALES, true) ? $locale : self::DEFAULT;
         } catch (\Throwable) {
