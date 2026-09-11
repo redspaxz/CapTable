@@ -72,6 +72,8 @@ $router->get('/lang/{code}', function (string $code) {
 // these pages exist precisely to pick one.
 $router->get('/tenants', [TenantController::class, 'index'], [$super]);
 $router->post('/tenants', [TenantController::class, 'store'], [$super]);
+$router->get('/tenants/{id}/edit', [TenantController::class, 'edit'], [$super]);
+$router->post('/tenants/{id}', [TenantController::class, 'update'], [$super]);
 $router->get('/tenant/switch/{id}', [TenantController::class, 'switch'], [$super]);
 
 // Settings (admin)

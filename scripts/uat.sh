@@ -336,6 +336,16 @@ TOKN=$(curl -s -b "$JAR3" "$URL/tenants" | grep -o 'name="_csrf" value="[^"]*"' 
 curl -s -b "$JAR3" -X POST "$URL/tenants"     --data-urlencode "name=UAT Newco SARL" --data-urlencode "legal_form=SARL"     --data-urlencode "admin_name=UAT Admin" --data-urlencode "admin_email=uat-newco@ttechgroup.cm"     --data-urlencode "admin_password=password123" --data-urlencode "_csrf=$TOKN" -o /dev/null
 R=$(curl -s -b "$JAR3" "$URL/tenants")
 has "$R" "UAT Newco SARL" && ok "création d'une société + compte admin (onboarding super-admin)" || ko "onboarding échoué"
+# Super-admin : modification de la fiche de la société créée
+R=$(curl -s -b "$JAR3" "$URL/tenants/3/edit")
+has "$R" "UAT Newco SARL" && ok "formulaire d'édition de société servi (super-admin)" || ko "édition société inaccessible"
+TOKE=$(echo "$R" | grep -o 'name="_csrf" value="[^"]*"' | head -1 | sed 's/.*value="//;s/"$//')
+curl -s -b "$JAR3" -X POST "$URL/tenants/3" \
+    --data-urlencode "name=UAT Newco Renamed SARL" --data-urlencode "legal_form=SAS" \
+    --data-urlencode "rccm=CM/DLA/2026/B/9999" --data-urlencode "_csrf=$TOKE" -o /dev/null
+R=$(curl -s -b "$JAR3" "$URL/tenants")
+has "$R" "UAT Newco Renamed SARL" && has "$R" "SAS" && ok "fiche société mise à jour (nom, forme juridique, RCCM)" || ko "mise à jour société échouée"
+
 rm -f "$JAR2" "$JAR3"
 
 # ---- Bilan -------------------------------------------------------------------------------

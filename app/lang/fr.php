@@ -438,4 +438,7 @@ return [
     'Company name, administrator name, a unique valid e-mail and a password of at least 8 characters are required.' => 'Le nom de la société, le nom de l\'administrateur, un e-mail valide unique et un mot de passe d\'au moins 8 caractères sont requis.',
     'Company ":name" created with its administrator account.' => 'Société « :name » créée avec son compte administrateur.',
     'Users' => 'Utilisateurs',
+    'Edit company' => 'Modifier la société',
+    'Company ":name" updated.' => 'Société « :name » mise à jour.',
+    'Company name is required.' => 'Le nom de la société est requis.',
 ];

@@ -77,6 +77,62 @@ class TenantController extends Controller
         \App\redirect('/tenants');
     }
 
+    /** Edit form for a company's legal profile (super-admin). */
+    public function edit(string $id): string
+    {
+        $tenant = Database::one('SELECT * FROM tenants WHERE id = ? AND is_active = 1', [(int) $id]);
+        if (!$tenant) {
+            \App\flash('error', __('Unknown company.'));
+            \App\redirect('/tenants');
+        }
+        $settings = Database::one('SELECT * FROM settings WHERE tenant_id = ?', [(int) $id]) ?? [];
+        return $this->view('tenants/edit', [
+            'title' => __('Edit company'),
+            'tenant' => $tenant,
+            'settings' => $settings,
+        ]);
+    }
+
+    /** Save the legal profile: tenants.name + the settings row. */
+    public function update(string $id): void
+    {
+        Csrf::verify();
+        $tenantId = (int) $id;
+        $tenant = Database::one('SELECT * FROM tenants WHERE id = ? AND is_active = 1', [$tenantId]);
+        if (!$tenant) {
+            \App\flash('error', __('Unknown company.'));
+            \App\redirect('/tenants');
+        }
+        $data = [
+            'name' => trim(Request::str('name', '')),
+            'legal_form' => trim(Request::str('legal_form', 'SARL')),
+            'rccm' => trim(Request::str('rccm', '')),
+            'niu' => trim(Request::str('niu', '')),
+            'head_office' => trim(Request::str('head_office', '')),
+        ];
+        $v = new Validator($data);
+        $v->required('name');
+        if ($v->fails()) {
+            \App\flash('error', __('Company name is required.'));
+            \App\redirect('/tenants/' . $tenantId . '/edit');
+        }
+        $existing = Database::one('SELECT id FROM settings WHERE tenant_id = ?', [$tenantId]);
+        if ($existing) {
+            Database::execute(
+                'UPDATE settings SET company_name = ?, legal_form = ?, rccm = ?, niu = ?, head_office = ? WHERE tenant_id = ?',
+                [$data['name'], $data['legal_form'], $data['rccm'], $data['niu'], $data['head_office'], $tenantId]
+            );
+        } else {
+            Database::execute(
+                'INSERT INTO settings (tenant_id, company_name, legal_form, rccm, niu, head_office) VALUES (?,?,?,?,?,?)',
+                [$tenantId, $data['name'], $data['legal_form'], $data['rccm'], $data['niu'], $data['head_office']]
+            );
+        }
+        Database::execute('UPDATE tenants SET name = ? WHERE id = ?', [$data['name'], $tenantId]);
+        \App\flash('success', __('Company ":name" updated.', ['name' => $data['name']]));
+        \App\redirect('/tenants');
+    }
+
     public function switch(string $id): void
     {
         Tenancy::switchTo((int) $id);

@@ -23,7 +23,8 @@
             <td><?= e($t['rccm'] ?? '—') ?></td>
             <td class="text-end"><?= (int) $t['shareholder_count'] ?></td>
             <td class="text-end"><?= (int) $t['user_count'] ?></td>
-            <td>
+            <td class="text-nowrap">
+              <a class="btn btn-sm btn-outline-secondary me-1" href="<?= url('/tenants/' . (int) $t['id'] . '/edit') ?>"><i class="bi bi-pencil"></i> <?= __('Edit') ?></a>
               <a class="btn btn-sm btn-outline-primary" href="<?= url('/tenant/switch/' . (int) $t['id']) ?>"><?= __('Work on this company') ?></a>
             </td>
           </tr>
