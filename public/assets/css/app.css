@@ -18,6 +18,7 @@ body {
 .app-header .navbar {
   background: linear-gradient(90deg, var(--tt-dark) 0%, var(--tt-brand) 100%);
   box-shadow: 0 2px 12px rgba(16, 35, 63, 0.25);
+  padding-block: 0.5rem;
 }
 .brand-mark {
   display: inline-flex;
@@ -32,19 +33,60 @@ body {
   font-weight: 700;
   letter-spacing: 0.02em;
 }
-.nav-controls { justify-content: flex-end; row-gap: 0.35rem; }
-.nav-controls .btn { padding-inline: 0.5rem; }
-/* Wide navbars: the account controls take their own right-aligned row
-   instead of overflowing the viewport next to the 13 nav links. */
-@media (max-width: 1799.98px) {
-  .app-header .navbar-collapse { flex-wrap: wrap; }
-  .nav-controls { flex-basis: 100%; padding-bottom: 0.4rem; }
+
+/* Section strip under the main bar: one compact, horizontally scrollable row */
+.app-subnav {
+  background: var(--tt-dark);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
-.navbar .nav-link { border-radius: 0.4rem; padding-inline: 0.4rem; white-space: nowrap; font-size: 0.9rem; }
-.navbar .nav-link:hover { background: rgba(255, 255, 255, 0.12); }
-@media (max-width: 1399.98px) {
-  .navbar .nav-link { padding-inline: 0.3rem; font-size: 0.85rem; }
-  .navbar .nav-link .bi { display: none; }
+.app-subnav .nav-scroll {
+  display: flex;
+  align-items: stretch;
+  gap: 0.15rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;           /* Firefox */
+  -webkit-overflow-scrolling: touch;
+}
+.app-subnav .nav-scroll::-webkit-scrollbar { display: none; }
+/* Subtle fade hinting there is more to scroll horizontally */
+.app-subnav .container-fluid { position: relative; }
+.app-subnav .container-fluid::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 2.25rem;
+  background: linear-gradient(90deg, rgba(16, 35, 63, 0), var(--tt-dark) 85%);
+  pointer-events: none;
+}
+.app-subnav a {
+  display: inline-flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.82rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0 0 0.4rem 0.4rem;
+  text-decoration: none;
+}
+.app-subnav a:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+.app-subnav a.active {
+  color: #fff;
+  background: var(--tt-accent);
+  font-weight: 600;
+}
+
+/* Dropdown "Log out" lives on a <button class="dropdown-item"> */
+.dropdown-item.btn-logout, button.dropdown-item {
+  width: 100%;
+  text-align: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+/* Narrow screens: wide tables scroll inside their card instead of the page */
+@media (max-width: 991.98px) {
+  .table { display: block; overflow-x: auto; }
 }
 
 /* Cards & tables */
