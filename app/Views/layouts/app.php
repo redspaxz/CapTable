@@ -40,7 +40,7 @@
           <li class="nav-item"><a class="nav-link" href="<?= url('/convertibles') ?>"><i class="bi bi-arrow-repeat me-1"></i><?= __('Convertibles') ?></a></li>
           <li class="nav-item"><a class="nav-link" href="<?= url('/documents') ?>"><i class="bi bi-file-earmark-text me-1"></i><?= __('Documents') ?></a></li>
         </ul>
-        <div class="d-flex align-items-lg-center flex-column flex-lg-row gap-2">
+        <div class="nav-controls d-flex align-items-lg-center flex-column flex-lg-row flex-wrap gap-2">
           <?php if (Auth::isSuperAdmin()): ?>
           <div class="dropdown">
             <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
