@@ -9,7 +9,8 @@
   <main class="login-card card p-2">
     <div class="card-body p-4">
       <div class="text-center mb-4">
-        <span class="brand-mark mb-3" style="width:3.4rem;height:3.4rem;font-size:1.05rem;" aria-hidden="true">T&amp;T</span>
+        <span class="brand-mark mb-3" style="width:3.4rem;height:3.4rem;font-size:1.15rem;" aria-hidden="true">SX</span>
+        <h1 class="h4 fw-bold mb-1">StockbaseX</h1>
         <p class="text-muted small mb-0"><?= __('Share capital & equity management') ?></p>
         <p class="text-muted small"><?= __('T&Tech Consulting Group — OHADA law') ?></p>
       </div>

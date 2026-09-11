@@ -2,7 +2,7 @@
 
 return [
     'app' => [
-        'name' => 'T&T — T&Tech Consulting Group',
+        'name' => 'StockbaseX',
         'env' => getenv('APP_ENV') ?: 'production',
         'debug' => getenv('APP_DEBUG') === 'true',
         'base_url' => getenv('APP_BASE_URL') ?: '',

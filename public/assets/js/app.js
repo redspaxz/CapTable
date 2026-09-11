@@ -1,4 +1,4 @@
-/* CapTable — client-side enhancements (vanilla JS, no dependencies beyond Bootstrap bundle) */
+/* StockbaseX — client-side enhancements (vanilla JS, no dependencies beyond Bootstrap bundle) */
 (function () {
   'use strict';
 
