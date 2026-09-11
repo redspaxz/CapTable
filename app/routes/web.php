@@ -41,7 +41,7 @@ $router->get('/health', function () {
             : 'error ' . $e->getCode() . ' (connexion refusée ou base inaccessible)';
     }
     echo json_encode([
-        'app' => 'StockbaseX',
+        'app' => 'STOCKBASE-X',
         'php' => PHP_VERSION,
         'base_path' => App\Core\Request::basePath(),
         'database' => $db,

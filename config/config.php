@@ -2,7 +2,7 @@
 
 return [
     'app' => [
-        'name' => 'StockbaseX',
+        'name' => 'STOCKBASE-X',
         'env' => getenv('APP_ENV') ?: 'production',
         'debug' => getenv('APP_DEBUG') === 'true',
         'base_url' => getenv('APP_BASE_URL') ?: '',

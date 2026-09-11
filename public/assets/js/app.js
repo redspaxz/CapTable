@@ -1,4 +1,4 @@
-/* StockbaseX — client-side enhancements (vanilla JS, no dependencies beyond Bootstrap bundle) */
+/* STOCKBASE-X — client-side enhancements (vanilla JS, no dependencies beyond Bootstrap bundle) */
 (function () {
   'use strict';
 

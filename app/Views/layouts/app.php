@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Share capital &amp; equity management (OHADA law)">
-<title><?= e($title ?? 'StockbaseX') ?> · <?= e($tenant['name'] ?? 'T&Tech Consulting Group') ?></title>
+<title><?= e($title ?? 'STOCKBASE-X') ?> · <?= e($tenant['name'] ?? 'T&Tech Consulting Group') ?></title>
 <link href="<?= asset('/assets/vendor/bootstrap.min.css') ?>" rel="stylesheet">
 <link href="<?= asset('/assets/vendor/bootstrap-icons.min.css') ?>" rel="stylesheet">
 <link href="<?= asset('/assets/css/app.css') ?>" rel="stylesheet">
@@ -35,7 +35,7 @@
     <div class="container-fluid d-flex align-items-center gap-2 flex-nowrap">
       <a class="navbar-brand d-flex align-items-center gap-2 me-auto" href="<?= url('/') ?>">
         <span class="brand-mark" aria-hidden="true">SX</span>
-        <span class="fw-semibold d-none d-md-inline">StockbaseX</span>
+        <span class="brand-name fw-semibold d-none d-md-inline">STOCKBASE-X</span>
         <span class="text-white-50 text-truncate d-none d-xl-inline" style="max-width:18vw">· <?= e($tenant['name'] ?? '') ?></span>
       </a>
       <?php if (Auth::isSuperAdmin()): ?>

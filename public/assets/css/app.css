@@ -1,4 +1,4 @@
-/* StockbaseX — multi-company share management */
+/* STOCKBASE-X — multi-company share management */
 
 :root {
   --tt-dark: #10233f;
@@ -20,6 +20,7 @@ body {
   box-shadow: 0 2px 12px rgba(16, 35, 63, 0.25);
   padding-block: 0.5rem;
 }
+.brand-name { letter-spacing: 0.05em; }
 .brand-mark {
   display: inline-flex;
   align-items: center;

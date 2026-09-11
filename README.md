@@ -1,4 +1,4 @@
-# StockbaseX — gestion du capital (multi-sociétés)
+# STOCKBASE-X — gestion du capital (multi-sociétés)
 
 Système de gestion de capital (cap table) et des actions pour **T&Tech Consulting Group**, société opérant au Cameroun sous le droit **OHADA** (Acte uniforme relatif au droit des sociétés commerciales et du GIE — AUSCGIE).
 
